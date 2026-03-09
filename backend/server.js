@@ -1,26 +1,30 @@
+require('dotenv').config(); // ✅ PRIMERA LÍNEA
+
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const XLSX = require('xlsx');
-const path = require('path');
-const { format } = require('date-fns');
 
+// ✅ IMPORTAR POSTGRESQL (NO better-sqlite3)
 const { 
-  db, 
+  pool, 
   initDatabase, 
-  registrarLog, 
-  getKPIs, 
-  getAlertas, 
-  getCargaLineas,
-  simularPlan 
+  guardarAlupakPedidos, 
+  guardarInventarioFisico,
+  obtenerHistorialImportaciones,
+  obtenerDatosGuardados,
+  extraerInfoOFLote
 } = require('./database');
 
-// Inicializar base de datos
-initDatabase();
+initDatabase().catch(console.error);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000; // Render usa 10000 por defecto
 
+app.use(cors());
+app.use(express.json());
+app.use(express.static('uploads'));
+// ... resto del código igual ...
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));  // ✅ Aumentar límite a 5 MB
