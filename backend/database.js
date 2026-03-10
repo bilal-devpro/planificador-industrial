@@ -15,7 +15,6 @@ async function initDatabase() {
     console.log('🔧 Inicializando base de datos PostgreSQL...');
     
     await pool.query(`
-      -- TABLA alupak_pedidos
       CREATE TABLE IF NOT EXISTS alupak_pedidos (
         id SERIAL PRIMARY KEY,
         customer_name TEXT NOT NULL,
@@ -27,7 +26,6 @@ async function initDatabase() {
         fecha_carga TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
       
-      -- TABLA inventario_fisico
       CREATE TABLE IF NOT EXISTS inventario_fisico (
         id SERIAL PRIMARY KEY,
         item_no TEXT NOT NULL,
@@ -43,7 +41,6 @@ async function initDatabase() {
         fecha_carga TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
       
-      -- TABLA historial_importaciones
       CREATE TABLE IF NOT EXISTS historial_importaciones (
         id SERIAL PRIMARY KEY,
         tipo TEXT NOT NULL,
@@ -54,7 +51,6 @@ async function initDatabase() {
         usuario TEXT DEFAULT 'system'
       );
       
-      -- TABLA configuracion
       CREATE TABLE IF NOT EXISTS configuracion (
         clave TEXT PRIMARY KEY,
         valor TEXT,
@@ -62,14 +58,9 @@ async function initDatabase() {
         actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
       
-      -- Índices
       CREATE INDEX IF NOT EXISTS idx_alupak_usuario_fecha ON alupak_pedidos(usuario_carga, fecha_carga);
       CREATE INDEX IF NOT EXISTS idx_inventario_usuario_fecha ON inventario_fisico(usuario_carga, fecha_carga);
-      CREATE INDEX IF NOT EXISTS idx_alupak_customer ON alupak_pedidos(customer_name);
-      CREATE INDEX IF NOT EXISTS idx_inventario_item ON inventario_fisico(item_no);
-      CREATE INDEX IF NOT EXISTS idx_historial_fecha ON historial_importaciones(fecha_importacion DESC);
       
-      -- Valores por defecto
       INSERT INTO configuracion (clave, valor, descripcion) 
       VALUES 
         ('version_sistema', '1.0.0', 'Versión del sistema'),
@@ -92,100 +83,41 @@ async function initDatabase() {
   }
 }
 
-// Extraer información de OF/Lote (¡SOLO UNA VEZ!)
+// ✅ FUNCIÓN EXTRAER INFO OF/LOTE - ¡SOLO UNA VEZ!
 function extraerInfoOFLote(valor) {
-  if (!valor || typeof valor !== 'string') {
-    return { tipo: 'Desconocido', ofNumero: null, loteNumero: null };
-  }
-  
-  const valorLimpio = valor.trim();
-  
-  // Detectar papel (empieza con Y)
-  if (valorLimpio.startsWith('Y')) {
-    return { tipo: 'Papel', ofNumero: null, loteNumero: valorLimpio };
-  }
-  
-  // Caso 1: Es una OF (número corto ≤ 10 dígitos)
-  if (/^\d{1,10}$/.test(valorLimpio)) {
-    return {
-      tipo: 'OF',
-      ofNumero: valorLimpio,
-      loteNumero: null
-    };
-  }
-  
-  // Caso 2: Es un lote (extraer primeros 6 dígitos como OF)
-  const match = valorLimpio.match(/^(\d{6})/);
-  if (match) {
-    return {
-      tipo: 'Lote',
-      ofNumero: match[1],
-      loteNumero: valorLimpio
-    };
-  }
-  
-  return {
-    tipo: 'Desconocido',
-    ofNumero: null,
-    loteNumero: valorLimpio
-  };
+  if (!valor || typeof valor !== 'string') return { tipo: 'Desconocido', ofNumero: null, loteNumero: null };
+  const v = valor.trim();
+  if (v.startsWith('Y')) return { tipo: 'Papel', ofNumero: null, loteNumero: v };
+  if (/^\d{1,10}$/.test(v)) return { tipo: 'OF', ofNumero: v, loteNumero: null };
+  const m = v.match(/^(\d{6})/);
+  if (m) return { tipo: 'Lote', ofNumero: m[1], loteNumero: v };
+  return { tipo: 'Desconocido', ofNumero: null, loteNumero: v };
 }
 
-// Guardar datos de ALUPAK (evita duplicados por usuario)
+// Guardar datos de ALUPAK
 async function guardarAlupakPedidos(pedidos, usuario = 'system') {
   const client = await pool.connect();
-  
   try {
     await client.query('BEGIN');
     await client.query('DELETE FROM alupak_pedidos WHERE usuario_carga = $1', [usuario]);
-    
     let guardados = 0;
-    const errores = [];
-    
-    for (const pedido of pedidos) {
+    for (const p of pedidos) {
       try {
         await client.query(`
-          INSERT INTO alupak_pedidos (
-            customer_name, no_sales_line, qty_pending, archivo_original, usuario_carga
-          ) VALUES ($1, $2, $3, $4, $5)
-        `, [
-          pedido.CustomerName,
-          pedido.No_SalesLine,
-          pedido.Qty_pending || 0,
-          pedido.archivo_original || 'desconocido',
-          usuario
-        ]);
+          INSERT INTO alupak_pedidos (customer_name, no_sales_line, qty_pending, archivo_original, usuario_carga)
+          VALUES ($1, $2, $3, $4, $5)
+        `, [p.CustomerName, p.No_SalesLine, p.Qty_pending || 0, p.archivo_original || 'desconocido', usuario]);
         guardados++;
-      } catch (error) {
-        errores.push({ pedido: pedido, error: error.message });
-      }
+      } catch (e) {}
     }
-    
     await client.query(`
-      INSERT INTO historial_importaciones (
-        tipo, nombre_archivo, filas_procesadas, filas_guardadas, usuario
-      ) VALUES ($1, $2, $3, $4, $5)
-    `, [
-      'alupak',
-      pedidos[0]?.archivo_original || 'alupak.xlsx',
-      pedidos.length,
-      guardados,
-      usuario
-    ]);
-    
+      INSERT INTO historial_importaciones (tipo, nombre_archivo, filas_procesadas, filas_guardadas, usuario)
+      VALUES ($1, $2, $3, $4, $5)
+    `, ['alupak', pedidos[0]?.archivo_original || 'alupak.xlsx', pedidos.length, guardados, usuario]);
     await client.query('COMMIT');
-    console.log(`✅ Guardados ${guardados} pedidos de ALUPAK`);
-    
-    return {
-      success: true,
-      guardados,
-      errores: errores.length,
-      mensaje: `Guardados ${guardados} pedidos exitosamente`
-    };
-    
+    return { success: true, guardados, mensaje: `Guardados ${guardados} pedidos` };
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error guardando ALUPAK:', error);
     throw error;
   } finally {
     client.release();
@@ -195,108 +127,63 @@ async function guardarAlupakPedidos(pedidos, usuario = 'system') {
 // Guardar datos de Inventario Físico
 async function guardarInventarioFisico(inventario, usuario = 'system') {
   const client = await pool.connect();
-  
   try {
     await client.query('BEGIN');
     await client.query('DELETE FROM inventario_fisico WHERE usuario_carga = $1', [usuario]);
-    
     let guardados = 0;
-    const errores = [];
-    
-    for (const registro of inventario) {
+    for (const r of inventario) {
       try {
-        const { tipo, ofNumero, loteNumero } = extraerInfoOFLote(registro.ReservEntryBufferLotNo || registro.lot_no);
-        
+        const { tipo, ofNumero, loteNumero } = extraerInfoOFLote(r.ReservEntryBufferLotNo || r.lot_no);
         await client.query(`
           INSERT INTO inventario_fisico (
             item_no, bin_code, lot_no, qty_base, archivo_original,
             tipo_registro, of_numero, lote_numero, usuario_carga
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         `, [
-          registro.ItemNo_ItemJournalLine || registro.item_no || '',
-          registro.BinCode_ItemJournalLine || registro.bin_code || 'SIN_UBICACION',
-          registro.ReservEntryBufferLotNo || registro.lot_no || null,
-          registro.ReservEntryBufferQtyBase || registro.qty_base || 0,
-          registro.archivo_original || 'desconocido',
+          r.ItemNo_ItemJournalLine || r.item_no || '',
+          r.BinCode_ItemJournalLine || r.bin_code || 'SIN_UBICACION',
+          r.ReservEntryBufferLotNo || r.lot_no || null,
+          r.ReservEntryBufferQtyBase || r.qty_base || 0,
+          r.archivo_original || 'desconocido',
           tipo || 'Lote',
           ofNumero || null,
-          loteNumero || registro.ReservEntryBufferLotNo || null,
+          loteNumero || r.ReservEntryBufferLotNo || null,
           usuario
         ]);
         guardados++;
-      } catch (error) {
-        errores.push({
-          item_no: registro.ItemNo_ItemJournalLine || 'desconocido',
-          error: error.message
-        });
-      }
+      } catch (e) {}
     }
-    
     await client.query(`
-      INSERT INTO historial_importaciones (
-        tipo, nombre_archivo, filas_procesadas, filas_guardadas, usuario
-      ) VALUES ($1, $2, $3, $4, $5)
-    `, [
-      'inventario',
-      inventario[0]?.archivo_original || 'inventario.xlsx',
-      inventario.length,
-      guardados,
-      usuario
-    ]);
-    
+      INSERT INTO historial_importaciones (tipo, nombre_archivo, filas_procesadas, filas_guardadas, usuario)
+      VALUES ($1, $2, $3, $4, $5)
+    `, ['inventario', inventario[0]?.archivo_original || 'inventario.xlsx', inventario.length, guardados, usuario]);
     await client.query('COMMIT');
-    console.log(`✅ Guardados ${guardados} registros de inventario`);
-    
-    return {
-      success: true,
-      guardados,
-      errores: errores.length,
-      mensaje: `Guardados ${guardados} registros exitosamente`
-    };
-    
+    return { success: true, guardados, mensaje: `Guardados ${guardados} registros` };
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error guardando inventario:', error);
     throw error;
   } finally {
     client.release();
   }
 }
 
-// Obtener historial de importaciones
 async function obtenerHistorialImportaciones(limit = 10) {
-  const result = await pool.query(`
-    SELECT id, tipo, nombre_archivo, filas_procesadas, filas_guardadas, 
-           usuario, fecha_importacion
+  const r = await pool.query(`
+    SELECT id, tipo, nombre_archivo, filas_procesadas, filas_guardadas, usuario, fecha_importacion
     FROM historial_importaciones
     ORDER BY fecha_importacion DESC
     LIMIT $1
   `, [limit]);
-  
-  return result.rows;
+  return r.rows;
 }
 
-// Obtener datos guardados
 async function obtenerDatosGuardados(usuario = null) {
-  const whereClause = usuario ? 'WHERE usuario_carga = $1' : '';
-  const params = usuario ? [usuario] : [];
-  
+  const w = usuario ? 'WHERE usuario_carga = $1' : '';
+  const p = usuario ? [usuario] : [];
   const [pedidos, inventario] = await Promise.all([
-    pool.query(`
-      SELECT id, customer_name, no_sales_line, qty_pending, fecha_carga, archivo_original
-      FROM alupak_pedidos
-      ${whereClause}
-      ORDER BY fecha_carga DESC
-    `, params),
-    
-    pool.query(`
-      SELECT id, item_no, bin_code, lot_no, qty_base, fecha_carga, archivo_original
-      FROM inventario_fisico
-      ${whereClause}
-      ORDER BY fecha_carga DESC
-    `, params)
+    pool.query(`SELECT * FROM alupak_pedidos ${w} ORDER BY fecha_carga DESC`, p),
+    pool.query(`SELECT * FROM inventario_fisico ${w} ORDER BY fecha_carga DESC`, p)
   ]);
-  
   return { pedidos: pedidos.rows, inventario: inventario.rows };
 }
 
@@ -307,5 +194,5 @@ module.exports = {
   guardarInventarioFisico,
   obtenerHistorialImportaciones,
   obtenerDatosGuardados,
-  extraerInfoOFLote
+  extraerInfoOFLote // ✅ EXPORTADO UNA SOLA VEZ
 };
