@@ -12,6 +12,7 @@ const PORT = process.env.PORT;
 // Ruta básica
 app.get("/", (req, res) => {
   res.send("Backend funcionando");
+  
 });
 
 // Configuración CORS
