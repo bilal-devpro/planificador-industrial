@@ -47,6 +47,7 @@ const Navigation = () => {
     { path: '/configuracion', icon: Settings, label: 'Configuración' },
   ];
 
+  
   return (
     <>
       {/* Botón mobile menu */}
