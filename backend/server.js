@@ -6,6 +6,10 @@ const { Pool } = require('pg');
 // ✅ 1. CREAR app ANTES de usarlo (¡ESTE ES EL ERROR CRÍTICO!)
 const app = express();
 const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log("Servidor en puerto " + PORT));
+app.get("/", (req, res) => {
+  res.send("Backend funcionando");
+});
 
 // ✅ 2. CONFIGURACIÓN CORS CORRECTA (después de crear app)
 const corsOptions = {
