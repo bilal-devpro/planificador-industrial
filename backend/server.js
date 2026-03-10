@@ -21,25 +21,18 @@ const corsOptions = {
     // Permitir solicitudes sin origen (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
-    // Dominios permitidos (Vercel + Render + localhost)
+    // Dominios permitidos EXACTOS (sin wildcards)
     const allowedOrigins = [
       'https://planificador-industrialverdader.vercel.app',
-      'https://planificador-industrialverd-git-*.bilals-projects.vercel.app',
+      'https://planificador-industrial.vercel.app',
+      'https://planificador-industrialverd-git-013bb0-bilals-projects-c48fced9.vercel.app', // ✅ Dominio EXACTO de tu deploy actual
       'https://planificador-industrial-1.onrender.com',
       'http://localhost:5173',
       'http://127.0.0.1:5173'
     ];
     
-    // Verificar si el origen coincide con algún patrón permitido
-    const isAllowed = allowedOrigins.some(allowed => {
-      if (allowed.includes('*')) {
-        const regex = new RegExp(allowed.replace(/\*/g, '.*'));
-        return regex.test(origin);
-      }
-      return origin === allowed;
-    });
-    
-    if (isAllowed) {
+    // Verificar si el origen está en la lista permitida
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.warn(`⚠️ CORS bloqueado para origen: ${origin}`);
@@ -52,6 +45,9 @@ const corsOptions = {
   optionsSuccessStatus: 200,
   exposedHeaders: ['Content-Disposition']
 };
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 const app = express();
 const PORT = process.env.PORT || 10000;
