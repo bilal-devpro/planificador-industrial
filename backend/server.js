@@ -3,26 +3,29 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 
-// ✅ 1. CREAR app ANTES de usarlo (¡ESTE ES EL ERROR CRÍTICO!)
+// Crear app
 const app = express();
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Servidor en puerto " + PORT));
+
+// Puerto dinámico (Render lo asigna)
+const PORT = process.env.PORT;
+
+// Ruta básica
 app.get("/", (req, res) => {
   res.send("Backend funcionando");
 });
 
-// ✅ 2. CONFIGURACIÓN CORS CORRECTA (después de crear app)
+// Configuración CORS
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Permitir solicitudes sin origen
-    
+    if (!origin) return callback(null, true);
+
     const allowedOrigins = [
       'https://planificador-industrialverdader.vercel.app',
       'https://planificador-industrial.vercel.app',
       'https://planificador-industrialverd-git-*.bilals-projects.vercel.app',
       'http://localhost:5173'
     ];
-    
+
     const isAllowed = allowedOrigins.some(allowed => {
       if (allowed.includes('*')) {
         const regex = new RegExp(allowed.replace(/\*/g, '.*'));
@@ -30,7 +33,7 @@ const corsOptions = {
       }
       return origin === allowed;
     });
-    
+
     callback(isAllowed ? null : new Error('CORS bloqueado'), isAllowed);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -42,29 +45,28 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
-// ✅ 3. MIDDLEWARES
+// Middlewares
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// ✅ 4. CONEXIÓN POSTGRESQL (Render)
+// Conexión PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// ✅ 5. ENDPOINT DE SALUD (para diagnóstico)
+// Endpoint de salud
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend funcionando correctamente', timestamp: new Date().toISOString() });
 });
 
-// ✅ 6. ENDPOINT MÍNIMO PARA IMPORTAR ALUPAK (solo procesa, no guarda en BD aún)
+// Endpoint de prueba
 app.post('/api/importar/alupak-pedidos', (req, res) => {
   try {
-    // Simular procesamiento mínimo (en producción usar XLSX)
     const pedidos = [
       { fila: 2, CustomerName: 'Cliente Ejemplo', No_SalesLine: 'AL123456', Qty_pending: 10000 }
     ];
-    
+
     res.json({
       success: true,
       message: 'Archivo procesado exitosamente',
@@ -76,7 +78,7 @@ app.post('/api/importar/alupak-pedidos', (req, res) => {
   }
 });
 
-// ✅ 7. INICIAR SERVIDOR (BIND A 0.0.0.0 - OBLIGATORIO PARA RENDER)
+// Iniciar servidor (solo una vez)
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor ejecutándose en http://0.0.0.0:${PORT}`);
   console.log(`✅ Backend listo para recibir peticiones desde Vercel`);
