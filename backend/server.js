@@ -49,8 +49,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
-const app = express();
-const PORT = process.env.PORT || 10000;
+// const app = express();
+// const PORT = process.env.PORT || 10000;
 
 // ✅ MIDDLEWARES EN ORDEN CORRECTO
 app.use(cors(corsOptions)); // Primero CORS
