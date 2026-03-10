@@ -2135,39 +2135,39 @@ app.put('/api/configuracion', async (req, res) => {
 // ========================================
 
 // Extraer información de OF/Lote desde ReservEntryBufferLotNo
-function extraerInfoOFLote(valor) {
-  if (!valor || typeof valor !== 'string') {
-    return { tipo: 'Desconocido', ofNumero: null, loteNumero: null };
-  }
+// function extraerInfoOFLote(valor) {
+//   if (!valor || typeof valor !== 'string') {
+//     return { tipo: 'Desconocido', ofNumero: null, loteNumero: null };
+//   }
 
-  const valorLimpio = valor.trim();
+//   const valorLimpio = valor.trim();
   
-  // Caso 1: Es una OF (número corto ≤ 10 dígitos)
-  if (/^\d{1,10}$/.test(valorLimpio)) {
-    return { 
-      tipo: 'OF', 
-      ofNumero: valorLimpio, 
-      loteNumero: null 
-    };
-  }
+//   // Caso 1: Es una OF (número corto ≤ 10 dígitos)
+//   if (/^\d{1,10}$/.test(valorLimpio)) {
+//     return { 
+//       tipo: 'OF', 
+//       ofNumero: valorLimpio, 
+//       loteNumero: null 
+//     };
+//   }
   
-  // Caso 2: Es un lote (extraer primeros 6 dígitos como OF)
-  const match = valorLimpio.match(/^(\d{6})/);
-  if (match) {
-    return { 
-      tipo: 'Lote', 
-      ofNumero: match[1], 
-      loteNumero: valorLimpio 
-    };
-  }
+//   // Caso 2: Es un lote (extraer primeros 6 dígitos como OF)
+//   const match = valorLimpio.match(/^(\d{6})/);
+//   if (match) {
+//     return { 
+//       tipo: 'Lote', 
+//       ofNumero: match[1], 
+//       loteNumero: valorLimpio 
+//     };
+//   }
   
-  // Caso 3: Formato desconocido
-  return { 
-    tipo: 'Desconocido', 
-    ofNumero: null, 
-    loteNumero: valorLimpio 
-  };
-}
+//   // Caso 3: Formato desconocido
+//   return { 
+//     tipo: 'Desconocido', 
+//     ofNumero: null, 
+//     loteNumero: valorLimpio 
+//   };
+// }
 
 // Procesar inventario y extraer OFs/Lotes
 function procesarInventarioConOF(inventario) {
