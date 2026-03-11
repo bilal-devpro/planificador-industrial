@@ -10,6 +10,7 @@ const {
 // CORS
 app.use(cors({
   origin: [
+    'https://bilal-devpro-planificador-i-git-a211f2-bilals-projects-c48fced9.vercel.app',
     'https://bilal-devpro-planificador-industria.vercel.app',
     'https://planificador-industrialverdader.vercel.app',
     'https://planificador-industrial.vercel.app',
