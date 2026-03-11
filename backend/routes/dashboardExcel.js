@@ -47,11 +47,9 @@ router.get('/resumen', async (req, res) => {
       FROM inventario_fisico
     `);
 
-    // 🔥 NUEVO: métricas de stock por niveles (placeholder)
+    // Valores placeholder (ajústalos si tienes lógica real)
     const stock_bajo = 0;
-    const stock_critico = 0;
-    const stock_normal = Number(stock.rows[0].cantidad_total);
-    const stock_excedente = 0;
+    const sin_stock = 0;
 
     const resumen = {
       pedidos: {
@@ -62,11 +60,10 @@ router.get('/resumen', async (req, res) => {
         productos_unicos: Number(stock.rows[0].productos_unicos),
         cantidad_total: Number(stock.rows[0].cantidad_total)
       },
-      // 🔥 NUEVO: campos que el frontend está intentando leer
-      stock_bajo,
-      stock_critico,
-      stock_normal,
-      stock_excedente,
+      alertas: {
+        stock_bajo,
+        sin_stock
+      },
       maquinas: {
         oee: 0.85
       }
@@ -81,15 +78,13 @@ router.get('/resumen', async (req, res) => {
       resumen: {
         pedidos: { total: 0, cantidad_total: 0 },
         stock: { productos_unicos: 0, cantidad_total: 0 },
-        stock_bajo: 0,
-        stock_critico: 0,
-        stock_normal: 0,
-        stock_excedente: 0,
+        alertas: { stock_bajo: 0, sin_stock: 0 },
         maquinas: { oee: 0 }
       }
     });
   }
 });
+
 
 
 
