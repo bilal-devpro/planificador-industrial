@@ -42,19 +42,22 @@ const DashboardExcel = () => {
   const [oeeConfig, setOeeConfig] = useState(0.85);
   const [machines, setMachines] = useState([]);
 
-useEffect(() => {
-  fetchData();
-}, []);
+  // 🔥 URL del backend
+  const API = import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const [resumenRes, pedidosRes, stockRes, graficosRes, configRes] = await Promise.all([
-        fetch('/api/dashboard-excel/resumen'),
-        fetch('/api/dashboard-excel/pedidos'),
-        fetch('/api/dashboard-excel/stock'),
-        fetch('/api/dashboard-excel/graficos'),
-        fetch('/api/configuracion')
+        fetch(`${API}/api/dashboard-excel/resumen`),
+        fetch(`${API}/api/dashboard-excel/pedidos`),
+        fetch(`${API}/api/dashboard-excel/stock`),
+        fetch(`${API}/api/dashboard-excel/graficos`),
+        fetch(`${API}/api/configuracion`)
       ]);
 
       const resumenData = await resumenRes.json();
@@ -63,13 +66,11 @@ useEffect(() => {
       const graficosData = await graficosRes.json();
       const configData = await configRes.json();
 
-      // Obtener OEE de configuración
       const oeeValor = parseFloat(
         configData.data?.find(c => c.clave === 'oee_objetivo')?.valor || '0.85'
       );
       setOeeConfig(oeeValor);
 
-      // Calcular utilización de máquinas
       const machineUtilization = calcularUtilizacionMaquinas(pedidosData.pedidos || [], oeeValor);
       setMachines(machineUtilization);
 
@@ -85,7 +86,6 @@ useEffect(() => {
   };
 
   const calcularUtilizacionMaquinas = (pedidosList, oee) => {
-    // Simular datos de máquinas - en producción se calcularía de verdad
     const machinesConfig = [
       { id: 'm1', name: 'M1', type: 'G1 (AL)', generacion: 'G1' },
       { id: 'm2', name: 'M2', type: 'G1 (AL)', generacion: 'G1' },
@@ -94,14 +94,12 @@ useEffect(() => {
     ];
 
     return machinesConfig.map(machine => {
-      // Calcular órdenes asignadas a esta máquina
       const orders = pedidosList.filter(p => {
         const isG1 = p.no_sales_line?.startsWith('AL');
         return (machine.generacion === 'G1' && isG1) || 
                (machine.generacion === 'G2' && !isG1);
       }).length;
 
-      // Calcular unidades totales
       const units = pedidosList
         .filter(p => {
           const isG1 = p.no_sales_line?.startsWith('AL');
@@ -110,10 +108,8 @@ useEffect(() => {
         })
         .reduce((sum, p) => sum + (p.qty_pending || 0), 0);
 
-      // Calcular tiempo estimado (simulado)
       const time = units > 0 ? Math.ceil(units / (machine.generacion === 'G1' ? 1683 : 280.5)) : 0;
 
-      // Calcular utilización (simulada)
       const utilization = Math.min(95, Math.max(40, Math.floor(Math.random() * 40) + 40));
 
       return {
@@ -132,7 +128,7 @@ useEffect(() => {
   const handleExport = async (tipo) => {
     setExporting(tipo);
     try {
-      const response = await fetch(`/api/dashboard-excel/exportar/${tipo}`);
+      const response = await fetch(`${API}/api/dashboard-excel/exportar/${tipo}`);
       const blob = await response.blob();
       
       const url = window.URL.createObjectURL(blob);

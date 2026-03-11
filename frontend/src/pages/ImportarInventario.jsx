@@ -24,26 +24,26 @@ const ImportarInventario = () => {
     const [mostrarColumnas, setMostrarColumnas] = useState(false);
     const [backendOnline, setBackendOnline] = useState(true);
 
-    // Verificar backend al montar el componente
+    // 🔥 URL del backend
+    const API = import.meta.env.VITE_API_URL;
+
     React.useEffect(() => {
         verificarBackend();
     }, []);
 
     const verificarBackend = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/health', {
-                method: 'GET'
-            });
+            const response = await fetch(`${API}/api/health`, { method: 'GET' });
 
             if (response.ok) {
                 setBackendOnline(true);
             } else {
                 setBackendOnline(false);
-                setError('⚠️ El servidor backend no está respondiendo. Por favor, inicia el backend con "npm start" en la carpeta backend.');
+                setError('⚠️ El servidor backend no está respondiendo.');
             }
         } catch (error) {
             setBackendOnline(false);
-            setError('⚠️ No se puede conectar con el servidor backend. Verifica que esté corriendo en http://localhost:3000');
+            setError(`⚠️ No se puede conectar con el backend en ${API}`);
         }
     };
 
@@ -61,7 +61,7 @@ const ImportarInventario = () => {
     const handleUpload = async () => {
         if (!archivo) return;
         if (!backendOnline) {
-            setError('⚠️ El servidor backend no está disponible. Por favor, inícialo primero.');
+            setError('⚠️ El servidor backend no está disponible.');
             return;
         }
 
@@ -72,15 +72,14 @@ const ImportarInventario = () => {
         formData.append('archivo', archivo);
 
         try {
-            const response = await fetch('http://localhost:3000/api/importar/inventario-fisico', {
+            const response = await fetch(`${API}/api/importar/inventario-fisico`, {
                 method: 'POST',
                 body: formData
             });
 
-            // Verificar si la respuesta es HTML (error del servidor)
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('text/html')) {
-                throw new Error('El servidor devolvió una página HTML en lugar de JSON. Verifica que el backend esté corriendo correctamente.');
+                throw new Error('El servidor devolvió HTML en lugar de JSON.');
             }
 
             if (!response.ok) {
@@ -91,16 +90,10 @@ const ImportarInventario = () => {
             const data = await response.json();
 
             if (data.success) {
-                // FILTRAR SOLO FILAS CON CANTIDAD > 0
-                const cleanedInventario = (data.inventario || []).filter(item => {
-                    // Solo incluir si la cantidad es mayor que 0
-                    return item.ReservEntryBufferQtyBase > 0;
-                });
+                const cleanedInventario = (data.inventario || []).filter(item => item.ReservEntryBufferQtyBase > 0);
 
-                // Calcular estadísticas actualizadas
                 const filasFiltradas = (data.inventario?.length || 0) - cleanedInventario.length;
 
-                // Actualizar resultado con datos limpios
                 const updatedResultado = {
                     ...data,
                     estadisticas: {
@@ -113,11 +106,6 @@ const ImportarInventario = () => {
 
                 setResultado(updatedResultado);
                 setDatosMostrados(cleanedInventario);
-
-                // Mostrar mensaje si se filtraron filas
-                if (filasFiltradas > 0) {
-                    console.log(`ℹ️ Se omitieron ${filasFiltradas} filas con cantidad = 0`);
-                }
             } else {
                 throw new Error(data.error || 'Error desconocido en la respuesta');
             }
@@ -127,11 +115,8 @@ const ImportarInventario = () => {
 
             let mensajeError = error.message;
 
-            // Detectar errores específicos
             if (error.message.includes('Failed to fetch')) {
-                mensajeError = 'No se puede conectar con el servidor backend. Verifica que esté corriendo en http://localhost:3000';
-            } else if (error.message.includes('HTML')) {
-                mensajeError = 'El servidor devolvió un error HTML. Reinicia el backend.';
+                mensajeError = `No se puede conectar con el backend en ${API}`;
             }
 
             setError(`❌ ${mensajeError}`);
@@ -139,6 +124,7 @@ const ImportarInventario = () => {
             setCargando(false);
         }
     };
+
     const handleGuardarDatos = async () => {
         if (!datosMostrados || datosMostrados.length === 0) {
             setError('⚠️ No hay datos para guardar');
@@ -149,28 +135,23 @@ const ImportarInventario = () => {
         setError(null);
 
         try {
-            // ✅ USAR URL RELATIVA PARA QUE EL PROXY DE VITE FUNCIONE
-            const response = await fetch('/api/inventario/guardar', {
+            const response = await fetch(`${API}/api/inventario/guardar`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     inventario: datosMostrados,
                     nombreArchivo: archivo?.name || 'inventario_fisico.xlsx'
                 })
             });
 
-            // Intentar parsear JSON incluso en errores para mostrar detalles del backend
             let data;
             try {
                 data = await response.json();
-            } catch (e) {
+            } catch {
                 throw new Error(`Error del servidor (${response.status}): ${response.statusText}`);
             }
 
             if (!response.ok) {
-                // Mostrar error detallado del backend si está disponible
                 const mensajeError = data.detalle || data.error || `Error ${response.status}: ${response.statusText}`;
                 throw new Error(mensajeError);
             }
@@ -182,20 +163,14 @@ const ImportarInventario = () => {
                     mensajeGuardado: data.message
                 }));
 
-                // Mostrar mensaje de éxito
                 setTimeout(() => {
                     alert('✅ Datos guardados correctamente en la base de datos');
                 }, 100);
             }
 
         } catch (error) {
-            console.error('❌ Error CRÍTICO guardando inventario:', error);
+            console.error('❌ Error guardando inventario:', error);
             setError(`❌ Error al guardar: ${error.message || 'Error desconocido'}`);
-
-            // Sugerencia de solución en la UI para errores comunes
-            if (error.message?.includes('no such column')) {
-                setError('❌ ERROR DE BASE DE DATOS: Columnas faltantes en inventario_fisico. ¡Reinicia la BD eliminando planificador.db!');
-            }
         } finally {
             setCargando(false);
         }

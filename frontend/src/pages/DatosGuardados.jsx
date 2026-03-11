@@ -20,6 +20,9 @@ const DatosGuardados = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('alupak');
 
+  // 🔥 URL del backend
+  const API = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -27,10 +30,10 @@ const DatosGuardados = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-const [alupakRes, inventarioRes] = await Promise.all([
-  fetch('/api/alupak/ultimos'),  // ✅ URL RELATIVA
-  fetch('/api/inventario/ultimos')  // ✅ URL RELATIVA
-]);
+      const [alupakRes, inventarioRes] = await Promise.all([
+        fetch(`${API}/api/alupak/ultimos`),
+        fetch(`${API}/api/inventario/ultimos`)
+      ]);
 
       const alupakData = await alupakRes.json();
       const inventarioData = await inventarioRes.json();

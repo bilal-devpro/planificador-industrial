@@ -26,6 +26,9 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [backendOnline, setBackendOnline] = useState(false);
 
+  // 🔥 URL del backend
+  const API = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     checkBackendStatus();
     const interval = setInterval(fetchData, 30000);
@@ -34,7 +37,8 @@ const Dashboard = () => {
 
   const checkBackendStatus = async () => {
     try {
-      const response = await fetch('/api/health', { method: 'GET' });
+      const response = await fetch(`${API}/api/health`, { method: 'GET' });
+
       if (response.ok) {
         setBackendOnline(true);
         fetchData();
@@ -43,7 +47,7 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('❌ Error conectando al backend:', error);
-      setError('No se puede conectar al servidor backend. Verifica que esté corriendo en http://localhost:3000');
+      setError('No se puede conectar al servidor backend.');
       setLoading(false);
       setBackendOnline(false);
     }
@@ -54,11 +58,11 @@ const Dashboard = () => {
     
     try {
       console.log('🔄 Obteniendo datos del dashboard...');
-      
+
       const [kpisRes, alertasRes, cargaRes] = await Promise.all([
-        fetch('/api/dashboard/kpis'),
-        fetch('/api/dashboard/alertas'),
-        fetch('/api/dashboard/carga-lineas')
+        fetch(`${API}/api/dashboard/kpis`),
+        fetch(`${API}/api/dashboard/alertas`),
+        fetch(`${API}/api/dashboard/carga-lineas`)
       ]);
 
       if (!kpisRes.ok || !alertasRes.ok || !cargaRes.ok) {

@@ -33,16 +33,19 @@ const Pedidos = () => {
   const [resumen, setResumen] = useState(null);
   const [showFilters, setShowFilters] = useState(true);
 
-useEffect(() => {
-  fetchData();
-}, []);
+  // 🔥 URL del backend
+  const API = import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
     try {
-      const pedidosRes = await fetch('/api/dashboard-excel/pedidos');
+      const pedidosRes = await fetch(`${API}/api/dashboard-excel/pedidos`);
       const pedidosData = await pedidosRes.json();
       
-      const resumenRes = await fetch('/api/dashboard-excel/resumen');
+      const resumenRes = await fetch(`${API}/api/dashboard-excel/resumen`);
       const resumenData = await resumenRes.json();
       
       setPedidos(pedidosData.pedidos || []);
@@ -101,7 +104,7 @@ useEffect(() => {
 
   const exportToExcel = async () => {
     try {
-      const response = await fetch('/api/dashboard-excel/exportar/pedidos-atrasados');
+      const response = await fetch(`${API}/api/dashboard-excel/exportar/pedidos-atrasados`);
       const blob = await response.blob();
       
       const url = window.URL.createObjectURL(blob);

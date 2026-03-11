@@ -19,6 +19,9 @@ const GestionOFs = () => {
     fecha_planificada: ''
   });
 
+  // 🔥 URL del backend
+  const API = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -26,7 +29,7 @@ const GestionOFs = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/of/estadisticas');
+      const res = await fetch(`${API}/api/of/estadisticas`);
       const data = await res.json();
       
       setOfs(data.ofs || []);
@@ -45,7 +48,7 @@ const GestionOFs = () => {
     }
 
     try {
-      const response = await fetch('/api/of/guardar', {
+      const response = await fetch(`${API}/api/of/guardar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(nuevaOF)

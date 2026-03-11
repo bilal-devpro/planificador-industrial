@@ -19,11 +19,14 @@ const Stock = () => {
   const [stockConsolidado, setStockConsolidado] = useState([]);
   const [loading, setLoading] = useState(true);
   const [resumen, setResumen] = useState(null);
-  const [activeTab, setActiveTab] = useState('consolidado'); // 'consolidado' | 'detalle'
+  const [activeTab, setActiveTab] = useState('consolidado');
   const [filters, setFilters] = useState({
     nivel_stock: '',
     con_demanda: false
   });
+
+  // 🔥 URL del backend
+  const API = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     fetchData();
@@ -31,15 +34,12 @@ const Stock = () => {
 
   const fetchData = async () => {
     try {
-      // Obtener stock consolidado con demanda pendiente
-      const stockRes = await fetch('/api/dashboard-excel/stock');
+      const stockRes = await fetch(`${API}/api/dashboard-excel/stock`);
       const stockData = await stockRes.json();
 
-      // Obtener resumen general
-      const resumenRes = await fetch('/api/dashboard-excel/resumen');
+      const resumenRes = await fetch(`${API}/api/dashboard-excel/resumen`);
       const resumenData = await resumenRes.json();
 
-      // Procesar datos para consolidar por item
       const consolidado = procesarStockConsolidado(stockData.stock || []);
 
       setStockConsolidado(consolidado);
@@ -52,7 +52,6 @@ const Stock = () => {
   };
 
   const procesarStockConsolidado = (stockDetalle) => {
-    // Agrupar por item_no
     const agrupado = {};
 
     stockDetalle.forEach(item => {
@@ -66,7 +65,7 @@ const Stock = () => {
           lotes: new Set(),
           stock_seguridad: item.stock_seguridad || 0,
           nivel_stock: 'normal',
-          demanda_pendiente: 0, // Se calculará después
+          demanda_pendiente: 0,
           cobertura: null
         };
       }
@@ -75,7 +74,6 @@ const Stock = () => {
       if (item.bin_code) agrupado[item.item_no].ubicaciones.add(item.bin_code);
       if (item.lot_no) agrupado[item.item_no].lotes.add(item.lot_no);
 
-      // Determinar nivel de stock basado en stock_seguridad
       if (item.stock_seguridad) {
         if (agrupado[item.item_no].stock_total < item.stock_seguridad) {
           agrupado[item.item_no].nivel_stock = 'critico';
@@ -85,7 +83,6 @@ const Stock = () => {
       }
     });
 
-    // Convertir a array y calcular métricas adicionales
     return Object.values(agrupado).map(item => ({
       ...item,
       ubicaciones: Array.from(item.ubicaciones),
@@ -127,7 +124,7 @@ const Stock = () => {
 
   const exportToExcel = async () => {
     try {
-      const response = await fetch('/api/dashboard-excel/exportar/stock-critico');
+      const response = await fetch(`${API}/api/dashboard-excel/exportar/stock-critico`);
       const blob = await response.blob();
 
       const url = window.URL.createObjectURL(blob);

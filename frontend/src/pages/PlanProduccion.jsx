@@ -223,7 +223,7 @@ const PlanProduccion = () => {
       setDatosOriginales(JSON.stringify(planManual));
     }
   }, [planManual]);
-
+const API = import.meta.env.VITE_API_URL;
   const fetchData = async (forzarRecarga = false) => {
     // Verificar cambios no guardados antes de recargar
     if (!forzarRecarga && datosOriginales && JSON.stringify(planManual) !== datosOriginales) {
@@ -235,63 +235,42 @@ const PlanProduccion = () => {
     try {
       setLoading(true);
       const [pedidosRes, lineasRes, resumenRes, stockRes, configRes] = await Promise.all([
-        fetch('/api/dashboard-excel/pedidos'),
-        fetch('/api/lineas'),
-        fetch('/api/dashboard-excel/resumen'),
-        fetch('/api/dashboard-excel/stock'),
-        fetch('/api/configuracion')
-      ]);
+      fetch(`${API}/api/dashboard-excel/pedidos`),
+      fetch(`${API}/api/lineas`),
+      fetch(`${API}/api/dashboard-excel/resumen`),
+      fetch(`${API}/api/dashboard-excel/stock`),
+      fetch(`${API}/api/configuracion`)
+    ]);
 
-      const pedidosData = await pedidosRes.json();
-      const lineasData = await lineasRes.json();
-      const resumenData = await resumenRes.json();
-      const stockData = await stockRes.json();
-      const configData = await configRes.json();
+     const pedidosData = await pedidosRes.json();
+    const lineasData = await lineasRes.json();
+    const resumenData = await resumenRes.json();
+    const stockData = await stockRes.json();
+    const configData = await configRes.json();
 
-      // Cargar OEE por máquina desde configuración
-      const nuevoOee = { M1: 0.85, M2: 0.85, M3: 0.85, M4: 0.85 };
-      configData.data?.forEach(config => {
-        if (config.clave.startsWith('oee_maquina_')) {
-          const maquina = config.clave.split('_')[2];
-          if (nuevoOee[maquina] !== undefined) {
-            nuevoOee[maquina] = parseFloat(config.valor) || 0.85;
-            console.log(`⚙️ Cargado OEE para ${maquina}: ${(nuevoOee[maquina] * 100).toFixed(0)}%`);
-          }
+    // Cargar OEE por máquina desde configuración
+    const nuevoOee = { M1: 0.85, M2: 0.85, M3: 0.85, M4: 0.85 };
+    configData.data?.forEach(config => {
+      if (config.clave.startsWith('oee_maquina_')) {
+        const maquina = config.clave.split('_')[2];
+        if (nuevoOee[maquina] !== undefined) {
+          nuevoOee[maquina] = parseFloat(config.valor) || 0.85;
         }
-      });
-      setOeeMaquinas(nuevoOee);
+      }
+    });
 
-      // Procesar stock consolidado
-      const stockConsolidado = procesarStockConsolidado(stockData.stock || []);
-      setStockData(stockConsolidado);
+    setOeeMaquinas(nuevoOee);
+    setPedidos(pedidosData.pedidos || []);
+    setLineas(lineasData.lineas || []);
+    setResumen(resumenData.resumen || {});
+    setStockData(stockData.stock || []);
+    setLoading(false);
 
-      // Crear plan con cálculos usando OEE por máquina y distribución equitativa + ACUMULACIÓN DE TIEMPOS
-      const planInicial = crearPlanConCalculos(pedidosData.pedidos || [], stockConsolidado, nuevoOee);
-
-      setPedidos(pedidosData.pedidos || []);
-      setLineas(lineasData.data || []);
-      setPlanManual(planInicial);
-      setResumen(resumenData.resumen);
-      setLoading(false);
-      
-      // ✅ INICIALIZAR HISTORIAL CON EL PLAN INICIAL
-      setHistorialCambios([{
-        plan: planInicial,
-        timestamp: new Date().toISOString(),
-        accion: 'recarga_datos',
-        usuario: 'system',
-        detalles: { mensaje: 'Datos iniciales cargados desde ALUPAK/Inventario' }
-      }]);
-      setIndiceHistorial(0);
-      setDatosOriginales(JSON.stringify(planInicial));
-      
-      console.log('✅ Datos cargados correctamente con OEE actualizado:', nuevoOee);
-    } catch (error) {
-      console.error('❌ Error fetching data:', error);
-      setLoading(false);
-      alert('Error al cargar los datos. Verifica que el backend esté funcionando.');
-    }
-  };
+  } catch (error) {
+    console.error('❌ Error cargando datos del plan:', error);
+    setLoading(false);
+  }
+};
 
   // Procesar stock consolidado por producto
   const procesarStockConsolidado = (stockDetalle) => {
@@ -650,7 +629,7 @@ const PlanProduccion = () => {
     // ✅ Guardar en base de datos SIN alertas molestas
     try {
       setGuardandoOee(true);
-      await fetch('/api/configuracion', {
+      await fetch(`${API}/api/configuracion`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2122,7 +2101,7 @@ const PlanProduccion = () => {
                     
                     // Guardar en base de datos
                     try {
-                      const response = await fetch('/api/plan/produccion', {
+                        const response = await fetch(`${API}/api/plan/produccion`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

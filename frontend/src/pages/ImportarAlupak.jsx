@@ -20,14 +20,10 @@ const ImportarAlupak = () => {
   const [estadisticas, setEstadisticas] = useState(null);
   const [mostrarTablaCompleta, setMostrarTablaCompleta] = useState(false);
 
-  // ✅ URL dinámica para producción/desarrollo
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 
-    (import.meta.env.PROD 
-      ? 'https://planificador-industrial-1.onrender.com' 
-      : 'http://localhost:3000');
+  // 🔥 URL del backend
+  const API = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    // Limpiar estado al montar el componente
     return () => {
       setArchivo(null);
       setDatosExtraidos(null);
@@ -45,20 +41,16 @@ const ImportarAlupak = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // ✅ Validar tipo de archivo
       if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')) {
         setError('⚠️ Solo se permiten archivos Excel (.xlsx, .xls)');
         setArchivo(null);
         return;
       }
-      
-      // ✅ Validar tamaño (máximo 10MB)
       if (file.size > 10 * 1024 * 1024) {
         setError('⚠️ El archivo es demasiado grande (máximo 10MB)');
         setArchivo(null);
         return;
       }
-      
       setArchivo(file);
       setError('');
       setResultado({
@@ -83,13 +75,11 @@ const ImportarAlupak = () => {
       const formData = new FormData();
       formData.append('archivo', archivo);
 
-      // ✅ Usar URL dinámica
-      const response = await fetch(`${API_BASE_URL}/api/importar/alupak-pedidos`, {
+      const response = await fetch(`${API}/api/importar/alupak-pedidos`, {
         method: 'POST',
         body: formData
       });
 
-      // ✅ Manejo robusto de errores de red
       if (!response.ok) {
         if (response.status === 400) {
           const errorData = await response.json();
@@ -107,13 +97,13 @@ const ImportarAlupak = () => {
         setDatosExtraidos(data);
         setDatosMostrados(data.pedidos || []);
         setEstadisticas(data.estadisticas || null);
-        
+
         setResultado(prev => ({
           ...prev,
           procesado: true,
           mensajeProcesado: `✅ Archivo procesado exitosamente: ${data.pedidos?.length || 0} pedidos extraídos`
         }));
-        
+
         setError('');
       } else {
         throw new Error(data.error || 'Error desconocido al procesar el archivo');
@@ -130,13 +120,11 @@ const ImportarAlupak = () => {
   };
 
   const handleGuardarDatos = async () => {
-    // ✅ Validaciones robustas antes de guardar
     if (!datosMostrados || datosMostrados.length === 0) {
       setError('⚠️ No hay datos procesados para guardar');
       return;
     }
 
-    // ✅ Validar estructura mínima de los datos
     const tieneEstructuraValida = datosMostrados.every(pedido => 
       pedido.CustomerName && 
       pedido.No_SalesLine && 
@@ -152,37 +140,27 @@ const ImportarAlupak = () => {
     setError('');
 
     try {
-      // ✅ Obtener usuario con fallback seguro
       const usuario = localStorage.getItem('usuario') || 'system';
-      
-      // ✅ Nombre de archivo con fallback
       const nombreArchivo = archivo?.name || `alupak_${new Date().toISOString().split('T')[0]}.xlsx`;
 
-      // ✅ Usar URL dinámica
-      const response = await fetch(`${API_BASE_URL}/api/alupak/guardar`, {
+      const response = await fetch(`${API}/api/alupak/guardar`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pedidos: datosMostrados,
-          usuario: usuario,
-          nombreArchivo: nombreArchivo
+          usuario,
+          nombreArchivo
         })
       });
 
-      // ✅ Manejo robusto de errores
       if (!response.ok) {
-        // Intentar leer el cuerpo como JSON primero
         let errorData;
         try {
           errorData = await response.json();
-        } catch (e) {
-          // Si no es JSON, leer como texto
+        } catch {
           const text = await response.text();
           throw new Error(`Error ${response.status}: ${text.substring(0, 100)}`);
         }
-        
         throw new Error(errorData.error || `Error ${response.status} al guardar los datos`);
       }
 
@@ -195,19 +173,10 @@ const ImportarAlupak = () => {
           mensajeGuardado: data.mensaje || `Guardados ${data.guardados} pedidos exitosamente`
         }));
 
-        // ✅ Feedback visual mejorado
-        const mensaje = `✅ ${data.mensaje || 'Datos guardados correctamente'}\n\n` +
-                       `📊 Estadísticas:\n` +
-                       `   • Pedidos guardados: ${data.estadisticas?.guardados || 0}\n` +
-                       `   • Errores: ${data.estadisticas?.errores || 0}\n` +
-                       `   • Total procesados: ${data.estadisticas?.procesados || 0}`;
-        
-        alert(mensaje);
-        
-        // ✅ Notificar a otros componentes
+        alert(`✅ ${data.mensaje || 'Datos guardados correctamente'}`);
+
         window.dispatchEvent(new Event('datosActualizados'));
-        
-        // ✅ Resetear formulario después de guardar exitosamente
+
         setTimeout(() => {
           setArchivo(null);
           setDatosExtraidos(null);
@@ -227,11 +196,6 @@ const ImportarAlupak = () => {
     } catch (err) {
       console.error('Error guardando datos:', err);
       setError(`❌ ${err.message || 'Error al guardar los datos en la base de datos'}`);
-      
-      // ✅ Sugerencia de solución para errores comunes
-      if (err.message.includes('network') || err.message.includes('Failed to fetch')) {
-        setError(`❌ No se pudo conectar con el servidor.\n\nVerifica que:\n• El backend esté funcionando en ${API_BASE_URL}\n• Tengas conexión a internet\n• No haya bloqueadores de CORS`);
-      }
     } finally {
       setCargando(false);
     }

@@ -19,7 +19,6 @@ const Configuracion = () => {
   const [backupProgress, setBackupProgress] = useState(null);
   const [formData, setFormData] = useState({});
 
-  // Estado para OEE por máquina - ¡AHORA SÍ DEFINIDO!
   const [oeeMaquinas, setOeeMaquinas] = useState({
     M1: 0.85,
     M2: 0.85,
@@ -28,21 +27,22 @@ const Configuracion = () => {
   });
   const [savingOEE, setSavingOEE] = useState(false);
 
+  // 🔥 IMPORTANTE: URL del backend
+  const API = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     fetchConfiguracion();
   }, []);
 
   const fetchConfiguracion = async () => {
     try {
-      const response = await fetch('/api/configuracion');
+      const response = await fetch(`${API}/api/configuracion`);
       const data = await response.json();
 
-      // Extraer valores de configuración
       const configMap = {};
       data.data?.forEach(config => {
         configMap[config.clave] = config.valor;
 
-        // Cargar OEE por máquina si existe
         if (config.clave.startsWith('oee_maquina_')) {
           const maquina = config.clave.split('_')[2];
           if (oeeMaquinas[maquina] !== undefined) {
@@ -70,10 +70,9 @@ const Configuracion = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Guardar configuración general
       await Promise.all(
         Object.entries(formData).map(([clave, valor]) =>
-          fetch('/api/configuracion', {
+          fetch(`${API}/api/configuracion`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ clave, valor })
@@ -104,10 +103,9 @@ const Configuracion = () => {
   const handleSaveOEE = async () => {
     setSavingOEE(true);
     try {
-      // Guardar OEE de cada máquina
       await Promise.all(
         Object.entries(oeeMaquinas).map(([maquina, valor]) =>
-          fetch('/api/configuracion', {
+          fetch(`${API}/api/configuracion`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -119,7 +117,6 @@ const Configuracion = () => {
       );
 
       alert('✅ Configuración de OEE guardada exitosamente para todas las máquinas');
-      // Emitir evento para que otras páginas actualicen
       window.dispatchEvent(new Event('oeeUpdated'));
       setSavingOEE(false);
     } catch (error) {

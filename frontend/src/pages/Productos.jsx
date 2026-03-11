@@ -25,13 +25,16 @@ const Productos = () => {
     stock_seguridad: ''
   });
 
+  // 🔥 URL del backend
+  const API = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     fetchProductos();
   }, []);
 
   const fetchProductos = async () => {
     try {
-      const response = await fetch('/api/productos');
+      const response = await fetch(`${API}/api/productos`);
       const data = await response.json();
       setProductos(data.data || []);
       setLoading(false);
@@ -70,8 +73,8 @@ const Productos = () => {
     
     try {
       const url = editingProducto 
-        ? `/api/productos/${editingProducto.id}`
-        : '/api/productos';
+        ? `${API}/api/productos/${editingProducto.id}`
+        : `${API}/api/productos`;
       
       const method = editingProducto ? 'PUT' : 'POST';
       
