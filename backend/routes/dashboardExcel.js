@@ -42,10 +42,15 @@ router.get('/resumen', async (req, res) => {
         (SELECT COUNT(*) FROM historial_importaciones) AS total_importaciones
     `);
 
-    const resumen = r.rows[0] || {
-      total_pedidos: 0,
-      total_inventario: 0,
-      total_importaciones: 0
+    const raw = r.rows[0] || {};
+
+    // 🔥 Transformación para que coincida con lo que el frontend espera
+    const resumen = {
+      total: Number(raw.total_pedidos || 0),
+      criticos: 0,
+      bajos: 0,
+      normales: Number(raw.total_inventario || 0),
+      importaciones: Number(raw.total_importaciones || 0)
     };
 
     res.json({ resumen });
@@ -53,16 +58,18 @@ router.get('/resumen', async (req, res) => {
   } catch (err) {
     console.error('Error /dashboard-excel/resumen:', err);
 
-    // 🔥 Devolver SIEMPRE un objeto válido
     res.json({
       resumen: {
-        total_pedidos: 0,
-        total_inventario: 0,
-        total_importaciones: 0
+        total: 0,
+        criticos: 0,
+        bajos: 0,
+        normales: 0,
+        importaciones: 0
       }
     });
   }
 });
+
 
 
 // GET /api/dashboard-excel/graficos
