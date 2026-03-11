@@ -3,9 +3,15 @@ const router = express.Router();
 const { pool } = require('../database');
 
 router.get('/', async (req, res) => {
-  const result = await pool.query('SELECT * FROM productos');
-  res.json({ success: true, data: result.rows });
+  try {
+    const result = await pool.query('SELECT * FROM productos');
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    console.error("Error en GET /productos:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
+
 
 router.post('/', async (req, res) => {
   const { codigo, nombre } = req.body;
