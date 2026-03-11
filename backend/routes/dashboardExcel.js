@@ -41,12 +41,29 @@ router.get('/resumen', async (req, res) => {
         (SELECT COUNT(*) FROM inventario_fisico) AS total_inventario,
         (SELECT COUNT(*) FROM historial_importaciones) AS total_importaciones
     `);
-    res.json({ resumen: r.rows[0] || {} });
+
+    const resumen = r.rows[0] || {
+      total_pedidos: 0,
+      total_inventario: 0,
+      total_importaciones: 0
+    };
+
+    res.json({ resumen });
+
   } catch (err) {
     console.error('Error /dashboard-excel/resumen:', err);
-    res.status(500).json({ error: err.message });
+
+    // 🔥 Devolver SIEMPRE un objeto válido
+    res.json({
+      resumen: {
+        total_pedidos: 0,
+        total_inventario: 0,
+        total_importaciones: 0
+      }
+    });
   }
 });
+
 
 // GET /api/dashboard-excel/graficos
 router.get('/graficos', async (req, res) => {
