@@ -21,6 +21,7 @@ const corsOptions = {
     if (!origin) return callback(null, true);
 
     const allowedOrigins = [
+      'https://bilal-devpro-planificador-industria.vercel.app',
       'https://planificador-industrialverdader.vercel.app',
       'https://planificador-industrial.vercel.app',
       'https://planificador-industrialverd-git-*.bilals-projects.vercel.app',
