@@ -30,7 +30,15 @@ const Pedidos = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(15);
-  const [resumen, setResumen] = useState(null);
+const [resumen, setResumen] = useState({
+  pedidos: { total: 0, cantidad_total: 0 },
+  stock: { productos_unicos: 0, cantidad_total: 0 },
+  stock_bajo: 0,
+  stock_critico: 0,
+  stock_normal: 0,
+  stock_excedente: 0,
+  maquinas: { oee: 0 }
+});
   const [showFilters, setShowFilters] = useState(true);
 
   // 🔥 URL del backend

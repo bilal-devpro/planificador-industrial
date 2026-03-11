@@ -145,7 +145,15 @@ const PlanProduccion = () => {
   const [loading, setLoading] = useState(true);
   const [editingRow, setEditingRow] = useState(null);
   const [formData, setFormData] = useState({});
-  const [resumen, setResumen] = useState(null);
+const [resumen, setResumen] = useState({
+  pedidos: { total: 0, cantidad_total: 0 },
+  stock: { productos_unicos: 0, cantidad_total: 0 },
+  stock_bajo: 0,
+  stock_critico: 0,
+  stock_normal: 0,
+  stock_excedente: 0,
+  maquinas: { oee: 0 }
+});
   const [activeTab, setActiveTab] = useState('planificacion');
   const [showModal, setShowModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);

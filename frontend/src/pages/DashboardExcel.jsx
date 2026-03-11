@@ -32,7 +32,15 @@ import KpiCard from '../components/KpiCard';
 import MachineUtilization from '../components/MachineUtilization';
 
 const DashboardExcel = () => {
-  const [resumen, setResumen] = useState(null);
+const [resumen, setResumen] = useState({
+  pedidos: { total: 0, cantidad_total: 0 },
+  stock: { productos_unicos: 0, cantidad_total: 0 },
+  stock_bajo: 0,
+  stock_critico: 0,
+  stock_normal: 0,
+  stock_excedente: 0,
+  maquinas: { oee: 0 }
+});
   const [pedidos, setPedidos] = useState([]);
   const [stock, setStock] = useState([]);
   const [graficos, setGraficos] = useState(null);
