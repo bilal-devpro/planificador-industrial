@@ -35,40 +35,47 @@ router.get('/stock', async (req, res) => {
 // GET /api/dashboard-excel/resumen
 router.get('/resumen', async (req, res) => {
   try {
-    const r = await pool.query(`
-      SELECT
-        (SELECT COUNT(*) FROM alupak_pedidos) AS total_pedidos,
-        (SELECT COUNT(*) FROM inventario_fisico) AS total_inventario,
-        (SELECT COUNT(*) FROM historial_importaciones) AS total_importaciones
+    const pedidos = await pool.query(`
+      SELECT COUNT(*) AS total, COALESCE(SUM(qty_pending), 0) AS cantidad_total
+      FROM alupak_pedidos
     `);
 
-    const raw = r.rows[0] || {};
+    const stock = await pool.query(`
+      SELECT 
+        COUNT(DISTINCT item_no) AS productos_unicos,
+        COALESCE(SUM(qty_base), 0) AS cantidad_total
+      FROM inventario_fisico
+    `);
 
-    // 🔥 Transformación para que coincida con lo que el frontend espera
     const resumen = {
-      total: Number(raw.total_pedidos || 0),
-      criticos: 0,
-      bajos: 0,
-      normales: Number(raw.total_inventario || 0),
-      importaciones: Number(raw.total_importaciones || 0)
+      pedidos: {
+        total: Number(pedidos.rows[0].total),
+        cantidad_total: Number(pedidos.rows[0].cantidad_total)
+      },
+      stock: {
+        productos_unicos: Number(stock.rows[0].productos_unicos),
+        cantidad_total: Number(stock.rows[0].cantidad_total)
+      },
+      maquinas: {
+        oee: 0.85 // o lo que uses en tu config
+      }
     };
 
     res.json({ resumen });
 
   } catch (err) {
-    console.error('Error /dashboard-excel/resumen:', err);
+    console.error("Error en /resumen:", err);
 
     res.json({
       resumen: {
-        total: 0,
-        criticos: 0,
-        bajos: 0,
-        normales: 0,
-        importaciones: 0
+        pedidos: { total: 0, cantidad_total: 0 },
+        stock: { productos_unicos: 0, cantidad_total: 0 },
+        maquinas: { oee: 0 }
       }
     });
   }
 });
+
 
 
 
