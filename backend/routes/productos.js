@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../database');
+const { pool } = require('../database');
 
 router.get('/', async (req, res) => {
   const result = await pool.query('SELECT * FROM productos');
