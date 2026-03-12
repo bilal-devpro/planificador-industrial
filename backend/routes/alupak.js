@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const xlsx = require('xlsx');
-const { guardarAlupakPedidos } = require('../database');
-
+const { pool, guardarAlupakPedidos } = require('../database');
 // Configurar multer para recibir archivos
 const upload = multer({ storage: multer.memoryStorage() });
 
