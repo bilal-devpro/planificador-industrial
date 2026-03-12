@@ -74,7 +74,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
       const formData = new FormData();
       formData.append('archivo', archivo);
 
-      const response = await fetch(`${API_BASE_URL}/api/importar/alupak-pedidos`, {
+      const response = await fetch(`${API_BASE_URL}/api/alupak/importar`, {
         method: 'POST',
         body: formData
       });
