@@ -74,7 +74,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
       const formData = new FormData();
       formData.append('archivo', archivo);
 
-      const response = await fetch(`${API}/api/importar/alupak-pedidos`, {
+      const response = await fetch(`${API_BASE_URL}/api/importar/alupak-pedidos`, {
         method: 'POST',
         body: formData
       });
@@ -142,7 +142,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
       const usuario = localStorage.getItem('usuario') || 'system';
       const nombreArchivo = archivo?.name || `alupak_${new Date().toISOString().split('T')[0]}.xlsx`;
 
-      const response = await fetch(`${API}/api/alupak/guardar`, {
+      const response = await fetch(`${API_BASE_URL}/api/alupak/guardar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
