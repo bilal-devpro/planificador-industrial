@@ -74,7 +74,7 @@ const ImportarAlupak = () => {
       formData.append('archivo', archivo);
 
       // ✅ Enviar archivo DIRECTAMENTE al backend para procesarlo
-      const response = await fetch(`${API_BASE_URL}/api/importar/guardar`, {
+      const response = await fetch(`${API_BASE_URL}/api/alupak/guardar`, {
         method: 'POST',
         body: formData
       });
