@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Upload, FileText, CheckCircle, AlertTriangle, X, Download, 
+import {
+  Upload, FileText, CheckCircle, AlertTriangle, X, Download,
   RefreshCw, Database, HardHat, Package, TrendingUp, Info
 } from 'lucide-react';
 
@@ -17,9 +17,9 @@ const ImportarAlupak = () => {
   });
 
   // ✅ URL dinámica para producción/desarrollo
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 
-    (import.meta.env.PROD 
-      ? 'https://planificador-industrial-1.onrender.com' 
+  const API_BASE_URL = import.meta.env.VITE_API_URL ||
+    (import.meta.env.PROD
+      ? 'https://planificador-industrial-1.onrender.com'
       : 'http://localhost:3000');
 
   useEffect(() => {
@@ -74,10 +74,11 @@ const ImportarAlupak = () => {
       formData.append('archivo', archivo);
 
       // ✅ Enviar archivo DIRECTAMENTE al backend para procesarlo
-      const response = await fetch(`${API_BASE_URL}/api/alupak/guardar`, {
+      const response = await fetch(`${API_BASE_URL}/api/alupak/importar`, {
         method: 'POST',
         body: formData
       });
+
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -195,7 +196,7 @@ const ImportarAlupak = () => {
             Sube tu archivo Excel de pedidos pendientes de ALUPAK. El sistema procesará automáticamente los datos en el servidor y los guardará en la base de datos.
           </p>
         </div>
-        
+
         <div className="flex flex-wrap gap-3">
           <button
             onClick={handleReiniciar}
@@ -222,7 +223,7 @@ const ImportarAlupak = () => {
                   {(archivo.size / 1024).toFixed(1)} KB
                 </p>
               </div>
-              
+
               <div className="flex flex-wrap justify-center gap-3">
                 <button
                   onClick={() => setArchivo(null)}
@@ -231,7 +232,7 @@ const ImportarAlupak = () => {
                   <X size={16} />
                   Cambiar archivo
                 </button>
-                
+
                 <button
                   onClick={handleProcesar}
                   disabled={cargando}
@@ -252,8 +253,8 @@ const ImportarAlupak = () => {
               </div>
             </div>
           ) : (
-            <label 
-              htmlFor="file-upload" 
+            <label
+              htmlFor="file-upload"
               className="cursor-pointer flex flex-col items-center"
             >
               <div className="bg-blue-500/20 p-4 rounded-full mb-4">
@@ -268,11 +269,11 @@ const ImportarAlupak = () => {
               <span className="text-xs bg-bg-secondary text-text-secondary px-3 py-1 rounded">
                 Formatos soportados: .xlsx, .xls (máx. 10MB)
               </span>
-              <input 
+              <input
                 id="file-upload"
-                type="file" 
-                accept=".xlsx,.xls" 
-                className="hidden" 
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
                 onChange={handleFileChange}
               />
             </label>
@@ -310,7 +311,7 @@ const ImportarAlupak = () => {
               <Package size={20} className="text-purple-400" />
               Pedidos Extraídos ({datosMostrados.length})
             </h2>
-            
+
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={handleGuardarDatos}
@@ -349,8 +350,8 @@ const ImportarAlupak = () => {
               </thead>
               <tbody>
                 {datosMostrados.slice(0, 20).map((pedido, index) => (
-                  <tr 
-                    key={index} 
+                  <tr
+                    key={index}
                     className="hover:bg-bg-secondary/50 transition-colors"
                   >
                     <td className="py-2 px-4 font-mono">{pedido.fila}</td>
