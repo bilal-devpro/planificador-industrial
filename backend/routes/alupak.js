@@ -1,39 +1,39 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const xlsx = require('xlsx');
-const { pool, guardarAlupakPedidos } = require('../database.js');
+const { guardarAlupakPedidos } = require('../database');
 
-// Configurar multer para recibir archivos
-const upload = multer({ storage: multer.memoryStorage() });
-
-// TEST: comprobar que la ruta carga
-router.get('/', (req, res) => {
-  res.json({ ok: true, ruta: "ALUPAK cargada correctamente" });
-});
-
-// Ruta para importar pedidos ALUPAK
-router.post('/importar', upload.single('file'), async (req, res) => {
+// ✅ RUTA PARA GUARDAR DATOS YA PROCESADOS (desde frontend)
+router.post('/guardar', async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, error: 'No se envió ningún archivo' });
+    const { pedidos, nombreArchivo, usuario = 'system' } = req.body;
+    
+    if (!pedidos || !Array.isArray(pedidos)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Datos inválidos: se requiere array de pedidos' 
+      });
     }
 
-    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = xlsx.utils.sheet_to_json(sheet);
-
-    const resultado = await guardarAlupakPedidos(rows, 'usuario_web');
+    // Guardar en PostgreSQL (evita duplicados por usuario)
+    const resultado = await guardarAlupakPedidos(pedidos, usuario);
 
     res.json({
       success: true,
-      mensaje: 'Archivo procesado correctamente',
-      estadisticas: resultado
+      message: `✅ Guardados ${resultado.guardados} pedidos`,
+      estadisticas: {
+        procesados: pedidos.length,
+        guardados: resultado.guardados,
+        errores: pedidos.length - resultado.guardados
+      }
     });
 
   } catch (error) {
-    console.error('❌ Error importando ALUPAK:', error);
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ Error guardando ALUPAK:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error al guardar los datos en la base de datos',
+      detalle: error.message 
+    });
   }
 });
 
