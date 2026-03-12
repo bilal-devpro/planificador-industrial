@@ -21,8 +21,7 @@ const ImportarAlupak = () => {
   const [mostrarTablaCompleta, setMostrarTablaCompleta] = useState(false);
 
   // 🔥 URL del backend
-  const API = import.meta.env.VITE_API_URL;
-
+const API_BASE_URL = import.meta.env.VITE_API_URL;
   useEffect(() => {
     return () => {
       setArchivo(null);
