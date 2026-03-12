@@ -4,15 +4,15 @@ const cors = require('cors');
 
 const { initDatabase } = require('./database');
 
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+// Inicializar BD SOLO UNA VEZ
 initDatabase()
   .then(() => console.log("Base de datos lista"))
   .catch(err => console.error("Error inicializando DB:", err));
 
-
-const app = express();
-const PORT = process.env.PORT || 10000;
-
-// 🔥 CORS — SIEMPRE PRIMERO
+// CORS
 app.use(cors({
   origin: [
     'https://bilal-devpro-planificador-i-git-a211f2-bilals-projects-c48fced9.vercel.app',
@@ -24,22 +24,8 @@ app.use(cors({
   credentials: true
 }));
 
-// 🔥 Middleware para asegurar CORS incluso en errores
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  next();
-});
-
-// Body parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-
-// Inicializar BD
-initDatabase()
-  .then(() => console.log("✅ Base de datos inicializada"))
-  .catch(err => console.error("❌ Error inicializando BD:", err));
 
 // Rutas
 app.use('/api/configuracion', require('./routes/configuracion'));
@@ -51,12 +37,10 @@ app.use('/api/of', require('./routes/of'));
 app.use('/api/plan', require('./routes/plan'));
 app.use('/api/lineas', require('./routes/lineas'));
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend funcionando' });
 });
 
-// Inicio
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend escuchando en puerto ${PORT}`);
 });
