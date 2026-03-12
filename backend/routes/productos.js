@@ -12,7 +12,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-
 router.post('/', async (req, res) => {
   const { codigo, nombre } = req.body;
   await pool.query(

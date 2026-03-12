@@ -2,10 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-const {
-  pool,
-  initDatabase
-} = require('./database');
+const { initDatabase } = require('./database');
+
+initDatabase()
+  .then(() => console.log("Base de datos lista"))
+  .catch(err => console.error("Error inicializando DB:", err));
+
 
 const app = express();
 const PORT = process.env.PORT || 10000;
