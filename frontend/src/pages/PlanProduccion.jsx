@@ -1376,8 +1376,9 @@ const API = import.meta.env.VITE_API_URL;
                   </thead>
                   <tbody>
                     {historialCambios.slice().reverse().map((cambio, index) => {
-                      const historialIndex = historialCambios.length - 1 - index;
-                      const isActive = historialIndex === indiceHistorial;
+                      const isActive = index === indiceHistorial;
+                      const isPast = index < indiceHistorial;
+                      const isFuture = index > indiceHistorial;
                       
                       // ✅ PROTECCIÓN: Asegurar que cambio.accion exista antes de usar replace()
                       const accionSegura = cambio.accion || 'carga_inicial';
@@ -1437,7 +1438,7 @@ const API = import.meta.env.VITE_API_URL;
                                 <CheckCircle size={14} />
                                 Actual
                               </span>
-                            ) : historialIndex < indiceHistorial ? (
+                            ) : isPast ? (
                               <span className="badge bg-gray-800 text-gray-400">Anterior</span>
                             ) : (
                               <span className="badge bg-blue-900/30 text-blue-400">Posterior</span>
@@ -1449,14 +1450,14 @@ const API = import.meta.env.VITE_API_URL;
                                 onClick={() => {
                                   if (index < indiceHistorial) {
                                     // Deshacer hasta este punto
-                                    let steps = indiceHistorial - historialIndex;
+                                    let steps = indiceHistorial - index;
                                     while (steps > 0) {
                                       deshacer();
                                       steps--;
                                     }
                                   } else {
                                     // Rehacer hasta este punto
-                                    let steps = historialIndex - indiceHistorial;
+                                    let steps = index - indiceHistorial;
                                     while (steps > 0) {
                                       rehacer();
                                       steps--;
@@ -1750,8 +1751,8 @@ const API = import.meta.env.VITE_API_URL;
                               const { fechaFinCalculada } = calcularTiempoProduccion(
                                 parseInt(prev.cantidad_planificada),
                                 generacion,
-                                maquina,
-                                oeeMaquinas[maquina] || 0.85,
+                                prev.maquina_asignada,
+                                oeeMaquinas[prev.maquina_asignada] || 0.85,
                                 prev.fecha_inicio
                               );
                               setNuevoPlan(prevState => ({ ...prevState, fecha_fin: fechaFinCalculada }));
