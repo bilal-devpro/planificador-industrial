@@ -90,8 +90,9 @@ const ImportarInventario = () => {
             const data = await response.json();
 
             if (data.success) {
-                const cleanedInventario = (data.inventario || []).filter(item => item.ReservEntryBufferQtyBase > 0);
-
+                const cleanedInventario = (data.inventario || []).filter(
+                    item => Number(item.qty_base) > 0
+                );
                 const filasFiltradas = (data.inventario?.length || 0) - cleanedInventario.length;
 
                 const updatedResultado = {
@@ -100,7 +101,7 @@ const ImportarInventario = () => {
                         ...data.estadisticas,
                         registros_extraidos: cleanedInventario.length,
                         filas_filtradas: filasFiltradas,
-                        cantidad_total: cleanedInventario.reduce((sum, item) => sum + item.ReservEntryBufferQtyBase, 0)
+                    cantidad_total: cleanedInventario.reduce((sum, item) => sum + Number(item.qty_base), 0)
                     }
                 };
 
