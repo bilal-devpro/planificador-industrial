@@ -6,7 +6,6 @@ const { guardarAlupakPedidos } = require('../database');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// PROCESAR EXCEL
 router.post('/importar', upload.single('archivo'), async (req, res) => {
   try {
     if (!req.file) {
@@ -19,22 +18,19 @@ router.post('/importar', upload.single('archivo'), async (req, res) => {
 
     const nombreArchivo = req.file.originalname || 'alupak.xlsx';
 
-    // 🔥 Normalizamos aquí
+    // 🔥 Normalización obligatoria
     const pedidos = rows.map(r => ({
-      // para mostrar en frontend
+      // Campos para mostrar en frontend
       customer_name: r.CompanyName || '',
       no_sales_line: r.No_SalesLine || '',
       qty_pending: r.Quantity_SalesLine || 0,
 
-      // para guardar en BD (lo usará database.js)
+      // Campos que la BD necesita
       CustomerName: r.CompanyName || '',
       No_SalesLine: r.No_SalesLine || '',
       Qty_pending: r.Quantity_SalesLine || 0,
-      archivo_original: nombreArchivo,
 
-      // por si quieres mostrar más cosas
-      description: r.Description_SalesLine || '',
-      document_of: r.DocumentOF || ''
+      archivo_original: nombreArchivo
     }));
 
     res.json({
@@ -43,7 +39,7 @@ router.post('/importar', upload.single('archivo'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error procesando Excel:", error);
+    console.error("❌ Error procesando Excel:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -60,7 +56,13 @@ router.post('/guardar', async (req, res) => {
       });
     }
 
-    const resultado = await guardarAlupakPedidos(pedidos, usuario);
+    // 🔥 Añadir archivo_original a cada pedido
+    const pedidosConArchivo = pedidos.map(p => ({
+      ...p,
+      archivo_original: nombreArchivo
+    }));
+
+    const resultado = await guardarAlupakPedidos(pedidosConArchivo, usuario);
 
     res.json({
       success: true,
@@ -69,7 +71,7 @@ router.post('/guardar', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error guardando ALUPAK:', error);
+    console.error('❌ Error guardando ALUPAK:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
