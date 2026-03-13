@@ -3,7 +3,7 @@ import {
   Factory, Play, Pause, CheckCircle, AlertTriangle, Eye, Download, Plus, RefreshCw,
   Package, Clock, Calendar, HardHat, TrendingUp, Database, Edit2, Save, X, Settings,
   Cpu, Calculator, MapPin, AlertCircle, FileSpreadsheet, Hash, Tag, TrendingUp as TrendingUpIcon,
-  Info, Lock, Unlock, Trash2, Zap, SortAsc, SortDesc, ArrowUpDown, FilterX, ChevronUp, ChevronDown, 
+  Info, Lock, Unlock, Trash2, Zap, SortAsc, SortDesc, ArrowUpDown, FilterX, ChevronUp, ChevronDown,
   Search as SearchIcon,
   // ✅ AGREGA ESTA LÍNEA:
   History, Undo, Redo, Scale  // Asegúrate de incluir History, Undo y Redo
@@ -35,7 +35,7 @@ const CONFIG_MAQUINAS = {
 const isInClosure = (date) => {
   const day = date.getDay(); // 0: Domingo, 6: Sábado
   const hour = date.getHours();
-  
+
   // Cerrado: Sábado desde las 14:00 hasta Domingo antes de las 20:00 (30 horas)
   if (day === 6 && hour >= 14) return true; // Sábado después de las 14:00
   if (day === 0 && hour < 20) return true;  // Domingo antes de las 20:00
@@ -45,17 +45,17 @@ const isInClosure = (date) => {
 const getNextClosureStart = (date) => {
   const d = new Date(date);
   const day = d.getDay();
-  
+
   // Si es sábado antes de las 14:00, el próximo cierre empieza hoy a las 14:00
   if (day === 6 && d.getHours() < 14) {
     d.setHours(14, 0, 0, 0);
     return d;
   }
-  
+
   // Calcular días hasta el próximo sábado
   let daysToAdd = (6 - day + 7) % 7;
   if (daysToAdd === 0 && d.getHours() >= 14) daysToAdd = 7; // Si ya pasó el cierre de hoy, ir al próximo sábado
-  
+
   d.setDate(d.getDate() + daysToAdd);
   d.setHours(14, 0, 0, 0);
   return d;
@@ -64,7 +64,7 @@ const getNextClosureStart = (date) => {
 const getNextClosureEnd = (date) => {
   const d = new Date(date);
   const day = d.getDay();
-  
+
   // Si estamos en período de cierre, calcular fin del cierre (domingo 20:00)
   if (day === 6 && d.getHours() >= 14) {
     d.setDate(d.getDate() + 1); // Ir al domingo
@@ -76,7 +76,7 @@ const getNextClosureEnd = (date) => {
 // ✅ FUNCIÓN CLAVE: Calcular fecha fin con horario 24/7 + CIERRE DE FIN DE SEMANA (30h)
 const calcularFechaFinConHorarioLaboral = (fechaInicio, minutosNecesarios) => {
   if (minutosNecesarios <= 0) return new Date(fechaInicio);
-  
+
   let currentDateTime = new Date(fechaInicio);
   let remainingMinutes = minutosNecesarios;
 
@@ -122,7 +122,7 @@ const calcularTiempoProduccion = (cantidad, generacion, maquina, oee, fechaInici
   if (cantidad <= 0) {
     return { tiempoMinutos: 0, fechaFinCalculada: fechaInicio || '' };
   }
-  
+
   const capacidadPorMinuto = CONFIG_MAQUINAS[generacion].getCapacidad(maquina, oee);
   const tiempoMinutos = Math.ceil(cantidad / capacidadPorMinuto);
 
@@ -145,19 +145,19 @@ const PlanProduccion = () => {
   const [loading, setLoading] = useState(true);
   const [editingRow, setEditingRow] = useState(null);
   const [formData, setFormData] = useState({});
-const [resumen, setResumen] = useState({
-  pedidos: { total: 0, cantidad_total: 0 },
-  stock: { productos_unicos: 0, cantidad_total: 0 },
-  stock_bajo: 0,
-  stock_critico: 0,
-  stock_normal: 0,
-  stock_excedente: 0,
-  maquinas: { oee: 0 }
-});
+  const [resumen, setResumen] = useState({
+    pedidos: { total: 0, cantidad_total: 0 },
+    stock: { productos_unicos: 0, cantidad_total: 0 },
+    stock_bajo: 0,
+    stock_critico: 0,
+    stock_normal: 0,
+    stock_excedente: 0,
+    maquinas: { oee: 0 }
+  });
   const [activeTab, setActiveTab] = useState('planificacion');
   const [showModal, setShowModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  
+
   // ✅ Estado inicializado con valores por defecto para evitar warnings
   const [nuevoPlan, setNuevoPlan] = useState({
     alupak_pedido_id: '',
@@ -201,7 +201,7 @@ const [resumen, setResumen] = useState({
   // Escuchar cambios de OEE desde Configuración y otros componentes
   useEffect(() => {
     fetchData();
-    
+
     const handleOeeUpdate = (event) => {
       console.log('🔄 Detectado cambio de OEE desde Configuración. Recargando datos...');
       if (event.detail && event.detail.oeeValues) {
@@ -210,15 +210,23 @@ const [resumen, setResumen] = useState({
         fetchData();
       }
     };
-    
+
     const handlePlanUpdated = () => {
       console.log('🔄 Detectada actualización del plan desde otro componente. Recargando datos...');
       fetchData();
     };
-    
+    const handleDatosActualizados = () => {
+      console.log('🔄 Detectados nuevos datos importados. Recalculando plan inteligente...');
+      fetchData();
+    };
+
+    window.addEventListener('datosActualizados', handleDatosActualizados);
+
+    // En el return del useEffect, agregar:
+    window.removeEventListener('datosActualizados', handleDatosActualizados);
     window.addEventListener('oeeUpdated', handleOeeUpdate);
     window.addEventListener('planUpdated', handlePlanUpdated);
-    
+
     return () => {
       window.removeEventListener('oeeUpdated', handleOeeUpdate);
       window.removeEventListener('planUpdated', handlePlanUpdated);
@@ -231,7 +239,7 @@ const [resumen, setResumen] = useState({
       setDatosOriginales(JSON.stringify(planManual));
     }
   }, [planManual]);
-const API = import.meta.env.VITE_API_URL;
+  const API = import.meta.env.VITE_API_URL;
   const fetchData = async (forzarRecarga = false) => {
     // Verificar cambios no guardados antes de recargar
     if (!forzarRecarga && datosOriginales && JSON.stringify(planManual) !== datosOriginales) {
@@ -239,46 +247,53 @@ const API = import.meta.env.VITE_API_URL;
         return;
       }
     }
-    
+
     try {
       setLoading(true);
       const [pedidosRes, lineasRes, resumenRes, stockRes, configRes] = await Promise.all([
-      fetch(`${API}/api/dashboard-excel/pedidos`),
-      fetch(`${API}/api/lineas`),
-      fetch(`${API}/api/dashboard-excel/resumen`),
-      fetch(`${API}/api/dashboard-excel/stock`),
-      fetch(`${API}/api/configuracion`)
-    ]);
+        fetch(`${API}/api/dashboard-excel/pedidos`),
+        fetch(`${API}/api/lineas`),
+        fetch(`${API}/api/dashboard-excel/resumen`),
+        fetch(`${API}/api/dashboard-excel/stock`),
+        fetch(`${API}/api/configuracion`)
+      ]);
 
-     const pedidosData = await pedidosRes.json();
-    const lineasData = await lineasRes.json();
-    const resumenData = await resumenRes.json();
-    const stockData = await stockRes.json();
-    const configData = await configRes.json();
+      const pedidosData = await pedidosRes.json();
+      const lineasData = await lineasRes.json();
+      const resumenData = await resumenRes.json();
+      const stockData = await stockRes.json();
+      const configData = await configRes.json();
 
-    // Cargar OEE por máquina desde configuración
-    const nuevoOee = { M1: 0.85, M2: 0.85, M3: 0.85, M4: 0.85 };
-    configData.data?.forEach(config => {
-      if (config.clave.startsWith('oee_maquina_')) {
-        const maquina = config.clave.split('_')[2];
-        if (nuevoOee[maquina] !== undefined) {
-          nuevoOee[maquina] = parseFloat(config.valor) || 0.85;
+      // Cargar OEE por máquina desde configuración
+      const nuevoOee = { M1: 0.85, M2: 0.85, M3: 0.85, M4: 0.85 };
+      configData.data?.forEach(config => {
+        if (config.clave.startsWith('oee_maquina_')) {
+          const maquina = config.clave.split('_')[2];
+          if (nuevoOee[maquina] !== undefined) {
+            nuevoOee[maquina] = parseFloat(config.valor) || 0.85;
+          }
         }
+      });
+
+      setOeeMaquinas(nuevoOee);
+      setPedidos(pedidosData.pedidos || []);
+      setLineas(lineasData.lineas || []);
+      setResumen(resumenData.resumen || {});
+      setStockData(stockData.stock || []);
+      setLoading(false);
+      // Calcular plan inteligente automáticamente si hay pedidos y stock
+      if (pedidosData.pedidos && pedidosData.pedidos.length > 0 && stockData.stock && stockData.stock.length > 0) {
+        const stockConsolidado = procesarStockConsolidado(stockData.stock);
+        const planCalculado = crearPlanConCalculos(pedidosData.pedidos, stockConsolidado, nuevoOee);
+        setPlanManual(planCalculado);
+      } else {
+        setPlanManual([]); // Si no hay datos, dejar vacío
       }
-    });
-
-    setOeeMaquinas(nuevoOee);
-    setPedidos(pedidosData.pedidos || []);
-    setLineas(lineasData.lineas || []);
-    setResumen(resumenData.resumen || {});
-    setStockData(stockData.stock || []);
-    setLoading(false);
-
-  } catch (error) {
-    console.error('❌ Error cargando datos del plan:', error);
-    setLoading(false);
-  }
-};
+    } catch (error) {
+      console.error('❌ Error cargando datos del plan:', error);
+      setLoading(false);
+    }
+  };
 
   // Procesar stock consolidado por producto
   const procesarStockConsolidado = (stockDetalle) => {
@@ -350,7 +365,7 @@ const API = import.meta.env.VITE_API_URL;
 
       if (pedidoItem.cantidad_a_producir > 0) {
         const maquinasDisponibles = CONFIG_MAQUINAS[generacion].maquinas;
-        
+
         // Estrategia: Máquina con MENOS minutos acumulados (balanceo inteligente)
         const maquinaMenosCargada = maquinasDisponibles.reduce((menor, maq) => {
           return cargaPorMaquina[maq].minutosAcumulados < cargaPorMaquina[menor].minutosAcumulados ? maq : menor;
@@ -433,7 +448,7 @@ const API = import.meta.env.VITE_API_URL;
         // Si no necesita producción, asignar M1 por defecto
         maquinaAsignada = CONFIG_MAQUINAS[generacion].maquinas[0];
         oeeMaquina = oeeValues[maquinaAsignada] || 0.85;
-        
+
         // Conversión a cajas
         const unidadesPorCaja = esG1 ? 16380 : (esG2 ? 15600 : 0);
         const cajasPendientes = pedidoItem.qty_pending ? Math.ceil(pedidoItem.qty_pending / unidadesPorCaja) : 0;
@@ -443,7 +458,7 @@ const API = import.meta.env.VITE_API_URL;
           const parts = pedidoItem.fecha_importacion.split('/');
           if (parts.length === 3) {
             const [d, m, a] = parts;
-            return new Date(`${a}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`).toISOString().split('T')[0];
+            return new Date(`${a}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`).toISOString().split('T')[0];
           }
           return new Date(pedidoItem.fecha_importacion).toISOString().split('T')[0];
         })() : '';
@@ -513,7 +528,7 @@ const API = import.meta.env.VITE_API_URL;
     }
     if (filtros.search) {
       const searchLower = filtros.search.toLowerCase();
-      datos = datos.filter(d => 
+      datos = datos.filter(d =>
         d.no_sales_line.toLowerCase().includes(searchLower) ||
         d.producto_nombre.toLowerCase().includes(searchLower) ||
         d.customer_name.toLowerCase().includes(searchLower)
@@ -544,14 +559,14 @@ const API = import.meta.env.VITE_API_URL;
   // Calcular resumen del plan
   const calcularResumenPlan = () => {
     const datos = datosFiltradosYOrdenados;
-    const planificadas = datos.filter(p => 
+    const planificadas = datos.filter(p =>
       p.estado === 'planificado' || p.estado === 'en_produccion'
     );
     const totalPlanificado = planificadas.reduce((sum, p) => sum + (p.cantidad_planificada || 0), 0);
     const totalPendiente = datos.reduce((sum, p) => sum + (p.cantidad_pendiente || 0), 0);
     const cobertura = totalPendiente > 0 ? Math.min(100, Math.round((totalPlanificado / totalPendiente) * 100)) : 0;
     const conStockSuficiente = datos.filter(p => p.estado === 'stock_suficiente').length;
-    const requierenProduccion = datos.filter(p => 
+    const requierenProduccion = datos.filter(p =>
       p.estado === 'requiere_produccion' || p.estado === 'planificado'
     ).length;
 
@@ -586,7 +601,7 @@ const API = import.meta.env.VITE_API_URL;
   const guardarEnHistorial = (nuevoPlan, accion, detalles = {}) => {
     const snapshot = JSON.parse(JSON.stringify(nuevoPlan));
     const nuevoHistorial = historialCambios.slice(0, indiceHistorial + 1);
-    
+
     nuevoHistorial.push({
       plan: snapshot,
       timestamp: new Date().toISOString(),
@@ -594,7 +609,7 @@ const API = import.meta.env.VITE_API_URL;
       usuario: 'system',
       detalles: detalles || {}
     });
-    
+
     setHistorialCambios(nuevoHistorial);
     setIndiceHistorial(nuevoHistorial.length - 1);
     setDatosOriginales(JSON.stringify(snapshot));
@@ -630,10 +645,10 @@ const API = import.meta.env.VITE_API_URL;
       // Validación silenciosa - no mostrar alertas
       return;
     }
-    
+
     const nuevosValores = { ...oeeMaquinas, [maquina]: valorNum };
     setOeeMaquinas(nuevosValores);
-    
+
     // ✅ Guardar en base de datos SIN alertas molestas
     try {
       setGuardandoOee(true);
@@ -645,12 +660,12 @@ const API = import.meta.env.VITE_API_URL;
           valor: valorNum.toString()
         })
       });
-      
+
       // Notificar a otros componentes
-      window.dispatchEvent(new CustomEvent('oeeUpdated', { 
-        detail: { oeeValues: nuevosValores } 
+      window.dispatchEvent(new CustomEvent('oeeUpdated', {
+        detail: { oeeValues: nuevosValores }
       }));
-      
+
       // Feedback visual sutil en consola
       console.log(`✅ OEE de ${maquina} actualizado a ${(valorNum * 100).toFixed(0)}%`);
     } catch (error) {
@@ -680,7 +695,7 @@ const API = import.meta.env.VITE_API_URL;
   const handleSave = (rowId) => {
     const row = planManual.find(r => r.id === rowId);
     if (!row) return;
-    
+
     const oeeMaquina = oeeMaquinas[formData.maquina_asignada] || 0.85;
     const { tiempoMinutos } = calcularTiempoProduccion(
       parseInt(formData.cantidad_planificada) || 0,
@@ -703,14 +718,14 @@ const API = import.meta.env.VITE_API_URL;
     setPlanManual(nuevoPlan);
     setEditingRow(null);
     setFormData({});
-    
+
     guardarEnHistorial(nuevoPlan, 'edicion_manual', {
       pedido: row.no_sales_line,
       cambios: Object.keys(formData).filter(k => formData[k] !== row[k])
     });
-    
+
     window.dispatchEvent(new Event('planUpdated'));
-    
+
     setTimeout(() => {
       console.log('💾 Cambios guardados en base de datos:', updatedRow);
     }, 300);
@@ -757,13 +772,12 @@ const API = import.meta.env.VITE_API_URL;
     const oeeValue = oeeMaquinas[maquina] ? (oeeMaquinas[maquina] * 100).toFixed(0) : '85';
 
     return (
-      <span className={`badge ${
-        maquina === 'M1' ? 'bg-blue-900/30 border-blue-800 text-blue-400' :
-        maquina === 'M2' ? 'bg-green-900/30 border-green-800 text-green-400' :
-        maquina === 'M3' ? 'bg-yellow-900/30 border-yellow-800 text-yellow-400' :
-        maquina === 'M4' ? 'bg-purple-900/30 border-purple-800 text-purple-400' :
-        'bg-gray-800 text-gray-400'
-      }`}>
+      <span className={`badge ${maquina === 'M1' ? 'bg-blue-900/30 border-blue-800 text-blue-400' :
+          maquina === 'M2' ? 'bg-green-900/30 border-green-800 text-green-400' :
+            maquina === 'M3' ? 'bg-yellow-900/30 border-yellow-800 text-yellow-400' :
+              maquina === 'M4' ? 'bg-purple-900/30 border-purple-800 text-purple-400' :
+                'bg-gray-800 text-gray-400'
+        }`}>
         <Cpu size={12} className="mr-1" />
         {maquina}
         {showOEE && (
@@ -814,7 +828,7 @@ const API = import.meta.env.VITE_API_URL;
             El sistema calcula automáticamente los tiempos de producción usando OEE real de cada máquina, rendimiento específico por producto, disponibilidad del horario 24/7 y estado del stock.
           </p>
         </div>
-        
+
         {/* Controles Rápidos Mejorados */}
         <div className="flex flex-wrap gap-3 justify-end">
           <button
@@ -843,9 +857,8 @@ const API = import.meta.env.VITE_API_URL;
             <button
               onClick={deshacer}
               disabled={indiceHistorial <= 0}
-              className={`btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm ${
-                indiceHistorial <= 0 ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm ${indiceHistorial <= 0 ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               title={indiceHistorial <= 0 ? 'No hay cambios anteriores' : 'Deshacer último cambio'}
             >
               <Undo size={16} />
@@ -854,9 +867,8 @@ const API = import.meta.env.VITE_API_URL;
             <button
               onClick={rehacer}
               disabled={indiceHistorial >= historialCambios.length - 1}
-              className={`btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm ${
-                indiceHistorial >= historialCambios.length - 1 ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm ${indiceHistorial >= historialCambios.length - 1 ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               title={indiceHistorial >= historialCambios.length - 1 ? 'No hay cambios posteriores' : 'Rehacer último cambio'}
             >
               <Redo size={16} />
@@ -881,14 +893,13 @@ const API = import.meta.env.VITE_API_URL;
                 {['M1', 'M2', 'M3', 'M4'].map((maquina) => {
                   const oeeValue = oeeMaquinas[maquina] || 0.85;
                   const porcentaje = (oeeValue * 100).toFixed(0);
-                  
+
                   return (
                     <div key={maquina} className="flex items-center gap-2 bg-gray-800/50 px-3 py-1.5 rounded-lg">
-                      <span className={`px-2 py-0.5 rounded text-xs ${
-                        oeeValue >= 0.85 ? 'bg-green-900/30 text-green-400' :
-                        oeeValue >= 0.70 ? 'bg-yellow-900/30 text-yellow-400' : 'bg-red-900/30 text-red-400'
-                      }`}>
-                        {maquina}: 
+                      <span className={`px-2 py-0.5 rounded text-xs ${oeeValue >= 0.85 ? 'bg-green-900/30 text-green-400' :
+                          oeeValue >= 0.70 ? 'bg-yellow-900/30 text-yellow-400' : 'bg-red-900/30 text-red-400'
+                        }`}>
+                        {maquina}:
                       </span>
                       <div className="flex items-center gap-1">
                         {/* ✅ INPUT NUMÉRICO SIN SLIDERS - SIN ALERTAS MOLESTAS */}
@@ -1276,18 +1287,18 @@ const API = import.meta.env.VITE_API_URL;
                 </tbody>
               </table>
             </div>
-            
+
             {/* Resumen de resultados filtrados */}
             <div className="mt-4 py-3 border-t border-border-color text-sm text-secondary flex flex-wrap justify-between items-center">
               <div>
                 Mostrando <span className="font-bold">{datosFiltradosYOrdenados.length}</span> de <span className="font-bold">{planManual.length}</span> órdenes
                 {Object.values(filtros).some(f => f) && (
-                  <span className="ml-2 text-accent-blue">({Object.entries(filtros).filter(([k,v]) => v).map(([k,v]) => `${k}: ${v}`).join(', ')})</span>
+                  <span className="ml-2 text-accent-blue">({Object.entries(filtros).filter(([k, v]) => v).map(([k, v]) => `${k}: ${v}`).join(', ')})</span>
                 )}
               </div>
               <div className="mt-2 md:mt-0 flex gap-2">
-                <button 
-                  onClick={() => window.print()} 
+                <button
+                  onClick={() => window.print()}
                   className="btn btn-secondary btn-xs"
                 >
                   <Download size={14} className="mr-1" />
@@ -1323,9 +1334,8 @@ const API = import.meta.env.VITE_API_URL;
                   <button
                     onClick={deshacer}
                     disabled={indiceHistorial <= 0}
-                    className={`btn flex items-center gap-2 ${
-                      indiceHistorial <= 0 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
-                    }`}
+                    className={`btn flex items-center gap-2 ${indiceHistorial <= 0 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
+                      }`}
                   >
                     <Undo size={18} />
                     Deshacer ({indiceHistorial})
@@ -1333,9 +1343,8 @@ const API = import.meta.env.VITE_API_URL;
                   <button
                     onClick={rehacer}
                     disabled={indiceHistorial >= historialCambios.length - 1}
-                    className={`btn flex items-center gap-2 ${
-                      indiceHistorial >= historialCambios.length - 1 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
-                    }`}
+                    className={`btn flex items-center gap-2 ${indiceHistorial >= historialCambios.length - 1 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
+                      }`}
                   >
                     <Redo size={18} />
                     Rehacer ({historialCambios.length - indiceHistorial - 1})
@@ -1379,14 +1388,14 @@ const API = import.meta.env.VITE_API_URL;
                       const isActive = index === indiceHistorial;
                       const isPast = index < indiceHistorial;
                       const isFuture = index > indiceHistorial;
-                      
+
                       // ✅ PROTECCIÓN: Asegurar que cambio.accion exista antes de usar replace()
                       const accionSegura = cambio.accion || 'carga_inicial';
                       const accionFormateada = accionSegura.replace(/_/g, ' ');
-                      
+
                       return (
-                        <tr 
-                          key={index} 
+                        <tr
+                          key={index}
                           className={`${isActive ? 'bg-blue-900/20' : 'hover:bg-bg-secondary/50'} transition-colors`}
                         >
                           <td className="py-3 px-4 font-mono text-xs">
@@ -1399,13 +1408,12 @@ const API = import.meta.env.VITE_API_URL;
                             })}
                           </td>
                           <td className="py-3 px-4">
-                            <span className={`badge ${
-                              cambio.accion === 'cambio_maquina' ? 'bg-purple-900/30 text-purple-300' :
-                              cambio.accion === 'edicion_manual' ? 'bg-blue-900/30 text-blue-300' :
-                              cambio.accion === 'nueva_orden' ? 'bg-green-900/30 text-green-300' :
-                              cambio.accion === 'recarga_datos' ? 'bg-gray-800 text-gray-300' :
-                              'bg-gray-800 text-gray-300'
-                            }`}>
+                            <span className={`badge ${cambio.accion === 'cambio_maquina' ? 'bg-purple-900/30 text-purple-300' :
+                                cambio.accion === 'edicion_manual' ? 'bg-blue-900/30 text-blue-300' :
+                                  cambio.accion === 'nueva_orden' ? 'bg-green-900/30 text-green-300' :
+                                    cambio.accion === 'recarga_datos' ? 'bg-gray-800 text-gray-300' :
+                                      'bg-gray-800 text-gray-300'
+                              }`}>
                               {accionFormateada}
                             </span>
                           </td>
@@ -1464,9 +1472,8 @@ const API = import.meta.env.VITE_API_URL;
                                     }
                                   }
                                 }}
-                                className={`btn btn-xs ${
-                                  index < indiceHistorial ? 'btn-primary' : 'btn-secondary'
-                                }`}
+                                className={`btn btn-xs ${index < indiceHistorial ? 'btn-primary' : 'btn-secondary'
+                                  }`}
                                 title={index < indiceHistorial ? 'Volver a este estado' : 'Avanzar a este estado'}
                               >
                                 {index < indiceHistorial ? (
@@ -1533,8 +1540,8 @@ const API = import.meta.env.VITE_API_URL;
                 <Plus size={24} className="text-blue-400" />
                 Nueva Orden de Producción Manual
               </h3>
-              <button 
-                onClick={() => setShowModal(false)} 
+              <button
+                onClick={() => setShowModal(false)}
                 className="text-secondary hover:text-text-primary p-2 hover:bg-bg-secondary rounded-full transition"
                 aria-label="Cerrar modal"
               >
@@ -1549,13 +1556,13 @@ const API = import.meta.env.VITE_API_URL;
                   <Package size={18} className="text-purple-400" />
                   Pedido ALUPAK <span className="text-red-400">*</span>
                 </label>
-                
+
                 {pedidosSinPlan.length === 0 ? (
                   <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4 text-center">
                     <AlertTriangle size={24} className="mx-auto text-yellow-400 mb-2" />
                     <p className="font-medium text-yellow-300">No hay pedidos pendientes sin planificar</p>
                     <p className="text-sm mt-1">
-                      Todos los pedidos ya tienen una orden de producción asignada. 
+                      Todos los pedidos ya tienen una orden de producción asignada.
                       Puedes editar las órdenes existentes o importar nuevos datos de ALUPAK.
                     </p>
                   </div>
@@ -1581,18 +1588,18 @@ const API = import.meta.env.VITE_API_URL;
                           });
                           return;
                         }
-                        
+
                         const pedido = pedidos.find(p => p.id === parseInt(pedidoId));
                         if (pedido) {
                           // Determinar generación automáticamente
                           const esG1 = pedido.no_sales_line.startsWith('AL');
                           const esG2 = pedido.no_sales_line.startsWith('AC');
                           const generacion = esG1 ? 'G1' : (esG2 ? 'G2' : 'G1');
-                          
+
                           // Seleccionar primera máquina disponible para la generación
                           const maquinasDisponibles = CONFIG_MAQUINAS[generacion].maquinas;
                           const maquinaDefault = maquinasDisponibles[0];
-                          
+
                           // Calcular fecha de fin inicial
                           const fechaInicio = nuevoPlan.fecha_inicio || new Date().toISOString().split('T')[0];
                           const oeeMaquina = oeeMaquinas[maquinaDefault] || 0.85;
@@ -1603,7 +1610,7 @@ const API = import.meta.env.VITE_API_URL;
                             oeeMaquina,
                             fechaInicio
                           );
-                          
+
                           setNuevoPlan(prev => ({
                             ...prev,
                             alupak_pedido_id: pedidoId,
@@ -1622,15 +1629,15 @@ const API = import.meta.env.VITE_API_URL;
                         const esG1 = pedido.no_sales_line.startsWith('AL');
                         const esG2 = pedido.no_sales_line.startsWith('AC');
                         const generacion = esG1 ? 'G1 (AL)' : (esG2 ? 'G2 (AC)' : 'Desconocida');
-                        
+
                         return (
-                          <option 
-                            key={pedido.id} 
+                          <option
+                            key={pedido.id}
                             value={pedido.id}
                             className="bg-bg-secondary hover:bg-bg-surface"
                           >
-                            {pedido.customer_name} - {pedido.no_sales_line} 
-                            {pedido.producto_nombre && `(${pedido.producto_nombre})`} 
+                            {pedido.customer_name} - {pedido.no_sales_line}
+                            {pedido.producto_nombre && `(${pedido.producto_nombre})`}
                             • {pedido.qty_pending.toLocaleString()} u • {generacion}
                           </option>
                         );
@@ -1641,7 +1648,7 @@ const API = import.meta.env.VITE_API_URL;
                     </div>
                   </div>
                 )}
-                
+
                 {nuevoPlan.alupak_pedido_id && (
                   <div className="mt-2 p-3 bg-bg-secondary rounded-lg text-sm">
                     <div className="flex justify-between">
@@ -1657,12 +1664,11 @@ const API = import.meta.env.VITE_API_URL;
                     </div>
                     <div className="flex justify-between mt-1">
                       <span className="text-secondary">Stock disponible:</span>
-                      <span className={`font-medium ${
-                        (pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.stock_disponible || 0) < 
-                        (pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.qty_pending || 0)
+                      <span className={`font-medium ${(pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.stock_disponible || 0) <
+                          (pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.qty_pending || 0)
                           ? 'text-accent-red'
                           : 'text-accent-green'
-                      }`}>
+                        }`}>
                         {(pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.stock_disponible || 0).toLocaleString()} u
                       </span>
                     </div>
@@ -1687,7 +1693,7 @@ const API = import.meta.env.VITE_API_URL;
                         onChange={(e) => {
                           const valor = e.target.value;
                           setNuevoPlan(prev => ({ ...prev, cantidad_planificada: valor }));
-                          
+
                           // Recalcular fecha fin si tenemos otros datos necesarios
                           if (valor && nuevoPlan.fecha_inicio && nuevoPlan.maquina_asignada && nuevoPlan.alupak_pedido_id) {
                             const pedido = pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id));
@@ -1695,7 +1701,7 @@ const API = import.meta.env.VITE_API_URL;
                               const esG1 = pedido.no_sales_line.startsWith('AL');
                               const esG2 = pedido.no_sales_line.startsWith('AC');
                               const generacion = esG1 ? 'G1' : (esG2 ? 'G2' : 'G1');
-                              
+
                               const { fechaFinCalculada } = calcularTiempoProduccion(
                                 parseInt(valor),
                                 generacion,
@@ -1739,7 +1745,7 @@ const API = import.meta.env.VITE_API_URL;
                         onChange={(e) => {
                           const maquina = e.target.value;
                           setNuevoPlan(prev => ({ ...prev, maquina_asignada: maquina }));
-                          
+
                           // Recalcular fecha fin si tenemos otros datos necesarios
                           if (maquina && prev.cantidad_planificada && prev.fecha_inicio && prev.alupak_pedido_id) {
                             const pedido = pedidos.find(p => p.id === parseInt(prev.alupak_pedido_id));
@@ -1747,7 +1753,7 @@ const API = import.meta.env.VITE_API_URL;
                               const esG1 = pedido.no_sales_line.startsWith('AL');
                               const esG2 = pedido.no_sales_line.startsWith('AC');
                               const generacion = esG1 ? 'G1' : (esG2 ? 'G2' : 'G1');
-                              
+
                               const { fechaFinCalculada } = calcularTiempoProduccion(
                                 parseInt(prev.cantidad_planificada),
                                 generacion,
@@ -1766,16 +1772,16 @@ const API = import.meta.env.VITE_API_URL;
                         {nuevoPlan.alupak_pedido_id && (() => {
                           const pedido = pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id));
                           if (!pedido) return null;
-                          
+
                           const esG1 = pedido.no_sales_line.startsWith('AL');
                           const esG2 = pedido.no_sales_line.startsWith('AC');
                           const generacion = esG1 ? 'G1' : (esG2 ? 'G2' : 'G1');
                           const maquinasDisponibles = CONFIG_MAQUINAS[generacion].maquinas;
-                          
+
                           return maquinasDisponibles.map(maquina => {
                             const oee = (oeeMaquinas[maquina] || 0.85) * 100;
                             const pistas = maquina === 'M4' ? 6 : 12;
-                            
+
                             return (
                               <option key={maquina} value={maquina} className="bg-bg-secondary">
                                 {maquina} • {pistas} pistas • OEE: {oee.toFixed(0)}% • Cap: {Math.round(CONFIG_MAQUINAS[generacion].getCapacidad(maquina, oeeMaquinas[maquina] || 0.85))} u/min
@@ -1788,21 +1794,21 @@ const API = import.meta.env.VITE_API_URL;
                         <ChevronDown size={18} />
                       </div>
                     </div>
-                    
+
                     {nuevoPlan.alupak_pedido_id && (
                       <div className="mt-2 p-3 bg-blue-900/20 rounded-lg text-xs">
                         <div className="flex items-center gap-2 mb-1">
                           <Cpu size={14} className="text-blue-400" />
                           <span className="font-medium">
-                            {nuevoPlan.alupak_pedido_id && pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.no_sales_line.startsWith('AL') 
-                              ? 'Generación 1 (G1 - Productos AL)' 
+                            {nuevoPlan.alupak_pedido_id && pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.no_sales_line.startsWith('AL')
+                              ? 'Generación 1 (G1 - Productos AL)'
                               : 'Generación 2 (G2 - Productos AC)'}
                           </span>
                         </div>
                         <ul className="list-disc list-inside space-y-0.5 text-secondary">
                           <li>M1, M2, M3: 12 pistas × 55 ciclos/min</li>
-                          <li>{nuevoPlan.alupak_pedido_id && pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.no_sales_line.startsWith('AL') 
-                            ? 'M4: 6 pistas × 55 ciclos/min (solo G1)' 
+                          <li>{nuevoPlan.alupak_pedido_id && pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.no_sales_line.startsWith('AL')
+                            ? 'M4: 6 pistas × 55 ciclos/min (solo G1)'
                             : 'M4: No disponible para G2'}</li>
                         </ul>
                       </div>
@@ -1825,7 +1831,7 @@ const API = import.meta.env.VITE_API_URL;
                         onChange={(e) => {
                           const fecha = e.target.value;
                           setNuevoPlan(prev => ({ ...prev, fecha_inicio: fecha }));
-                          
+
                           // Recalcular fecha fin si tenemos otros datos necesarios
                           if (fecha && prev.cantidad_planificada && prev.maquina_asignada && prev.alupak_pedido_id) {
                             const pedido = pedidos.find(p => p.id === parseInt(prev.alupak_pedido_id));
@@ -1833,7 +1839,7 @@ const API = import.meta.env.VITE_API_URL;
                               const esG1 = pedido.no_sales_line.startsWith('AL');
                               const esG2 = pedido.no_sales_line.startsWith('AC');
                               const generacion = esG1 ? 'G1' : (esG2 ? 'G2' : 'G1');
-                              
+
                               const { fechaFinCalculada } = calcularTiempoProduccion(
                                 parseInt(prev.cantidad_planificada),
                                 generacion,
@@ -1874,7 +1880,7 @@ const API = import.meta.env.VITE_API_URL;
                               const esG1 = pedido.no_sales_line.startsWith('AL');
                               const esG2 = pedido.no_sales_line.startsWith('AC');
                               const generacion = esG1 ? 'G1' : (esG2 ? 'G2' : 'G1');
-                              
+
                               const { fechaFinCalculada } = calcularTiempoProduccion(
                                 parseInt(nuevoPlan.cantidad_planificada),
                                 generacion,
@@ -1883,7 +1889,7 @@ const API = import.meta.env.VITE_API_URL;
                                 nuevoPlan.fecha_inicio
                               );
                               setNuevoPlan(prev => ({ ...prev, fecha_fin: fechaFinCalculada }));
-                              
+
                               // Feedback visual
                               const btn = document.querySelector('button[title="Recalcular con OEE y horario 24/7"]');
                               if (btn) {
@@ -1941,7 +1947,7 @@ const API = import.meta.env.VITE_API_URL;
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="form-label flex items-center gap-2">
                     <TrendingUp size={18} className="text-yellow-400" />
@@ -2006,7 +2012,7 @@ const API = import.meta.env.VITE_API_URL;
                   <X size={18} className="mr-2" />
                   Cancelar
                 </button>
-                
+
                 <button
                   onClick={async () => {
                     // Validaciones completas
@@ -2014,49 +2020,49 @@ const API = import.meta.env.VITE_API_URL;
                       alert('⚠️ Selecciona un pedido ALUPAK');
                       return;
                     }
-                    
+
                     if (!nuevoPlan.cantidad_planificada || parseInt(nuevoPlan.cantidad_planificada) <= 0) {
                       alert('⚠️ Ingresa una cantidad válida mayor a 0');
                       return;
                     }
-                    
+
                     if (!nuevoPlan.maquina_asignada) {
                       alert('⚠️ Selecciona una máquina');
                       return;
                     }
-                    
+
                     if (!nuevoPlan.fecha_inicio) {
                       alert('⚠️ Selecciona una fecha de inicio');
                       return;
                     }
-                    
+
                     if (!nuevoPlan.fecha_fin) {
                       alert('⚠️ Calcula primero la fecha de fin estimada');
                       return;
                     }
-                    
+
                     // Obtener datos del pedido
                     const pedidoSeleccionado = pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id));
                     if (!pedidoSeleccionado) {
                       alert('⚠️ Pedido no encontrado');
                       return;
                     }
-                    
+
                     // Determinar generación
                     const esG1 = pedidoSeleccionado.no_sales_line.startsWith('AL');
                     const esG2 = pedidoSeleccionado.no_sales_line.startsWith('AC');
                     const generacion = esG1 ? 'G1' : (esG2 ? 'G2' : 'G1');
-                    
+
                     // Verificar que la máquina sea válida para la generación
                     const maquinasValidas = CONFIG_MAQUINAS[generacion].maquinas;
                     if (!maquinasValidas.includes(nuevoPlan.maquina_asignada)) {
                       alert(`❌ La máquina ${nuevoPlan.maquina_asignada} no está disponible para productos ${generacion} (${esG1 ? 'AL' : 'AC'})`);
                       return;
                     }
-                    
+
                     // Obtener OEE de la máquina
                     const oeeMaquina = oeeMaquinas[nuevoPlan.maquina_asignada] || 0.85;
-                    
+
                     // Calcular tiempo de producción
                     const { tiempoMinutos, fechaFinCalculada } = calcularTiempoProduccion(
                       parseInt(nuevoPlan.cantidad_planificada),
@@ -2065,7 +2071,7 @@ const API = import.meta.env.VITE_API_URL;
                       oeeMaquina,
                       nuevoPlan.fecha_inicio
                     );
-                    
+
                     // Crear nuevo registro
                     const nuevoRegistro = {
                       id: `manual-${Date.now()}`,
@@ -2095,11 +2101,11 @@ const API = import.meta.env.VITE_API_URL;
                       cajas_pendientes: Math.ceil(pedidoSeleccionado.qty_pending / (esG1 ? 16380 : (esG2 ? 15600 : 1))),
                       cajas_a_producir: Math.ceil(parseInt(nuevoPlan.cantidad_planificada) / (esG1 ? 16380 : (esG2 ? 15600 : 1)))
                     };
-                    
+
                     // Actualizar estado local
                     const nuevoPlanTotal = [...planManual, nuevoRegistro];
                     setPlanManual(nuevoPlanTotal);
-                    
+
                     // Guardar en historial
                     guardarEnHistorial(nuevoPlanTotal, 'nueva_orden', {
                       pedido: pedidoSeleccionado.no_sales_line,
@@ -2107,10 +2113,10 @@ const API = import.meta.env.VITE_API_URL;
                       maquina: nuevoPlan.maquina_asignada,
                       fecha_inicio: nuevoPlan.fecha_inicio
                     });
-                    
+
                     // Guardar en base de datos
                     try {
-                        const response = await fetch(`${API}/api/plan/produccion`, {
+                      const response = await fetch(`${API}/api/plan/produccion`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -2127,11 +2133,11 @@ const API = import.meta.env.VITE_API_URL;
                           observaciones: nuevoPlan.observaciones
                         })
                       });
-                      
+
                       if (response.ok) {
                         // Notificar a otros componentes
                         window.dispatchEvent(new Event('planUpdated'));
-                        
+
                         // Resetear formulario y cerrar modal
                         setNuevoPlan({
                           alupak_pedido_id: '',
@@ -2145,7 +2151,7 @@ const API = import.meta.env.VITE_API_URL;
                           generacion: ''
                         });
                         setShowModal(false);
-                        
+
                         // Feedback de éxito
                         alert('✅ Orden de producción creada exitosamente y guardada en la base de datos');
                       } else {
@@ -2186,8 +2192,8 @@ const API = import.meta.env.VITE_API_URL;
                 <History size={24} className="text-blue-400" />
                 Historial Completo de Cambios
               </h3>
-              <button 
-                onClick={() => setShowHistoryModal(false)} 
+              <button
+                onClick={() => setShowHistoryModal(false)}
                 className="text-secondary hover:text-text-primary"
               >
                 <X size={24} />
@@ -2201,9 +2207,8 @@ const API = import.meta.env.VITE_API_URL;
                   <button
                     onClick={deshacer}
                     disabled={indiceHistorial <= 0}
-                    className={`btn flex items-center gap-2 ${
-                      indiceHistorial <= 0 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
-                    }`}
+                    className={`btn flex items-center gap-2 ${indiceHistorial <= 0 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
+                      }`}
                   >
                     <Undo size={18} />
                     Deshacer ({indiceHistorial})
@@ -2211,9 +2216,8 @@ const API = import.meta.env.VITE_API_URL;
                   <button
                     onClick={rehacer}
                     disabled={indiceHistorial >= historialCambios.length - 1}
-                    className={`btn flex items-center gap-2 ${
-                      indiceHistorial >= historialCambios.length - 1 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
-                    }`}
+                    className={`btn flex items-center gap-2 ${indiceHistorial >= historialCambios.length - 1 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
+                      }`}
                   >
                     <Redo size={18} />
                     Rehacer ({historialCambios.length - indiceHistorial - 1})
@@ -2234,34 +2238,32 @@ const API = import.meta.env.VITE_API_URL;
                   const isActive = index === indiceHistorial;
                   const isPast = index < indiceHistorial;
                   const isFuture = index > indiceHistorial;
-                  
+
                   // ✅ PROTECCIÓN: Asegurar que cambio.accion exista antes de usar replace()
                   const accionSegura = cambio.accion || 'carga_inicial';
                   const accionFormateada = accionSegura.replace(/_/g, ' ');
-                  
+
                   return (
-                    <div 
-                      key={index} 
-                      className={`border border-border-color rounded-lg p-4 transition-all ${
-                        isActive 
+                    <div
+                      key={index}
+                      className={`border border-border-color rounded-lg p-4 transition-all ${isActive
                           ? 'border-blue-500 bg-blue-900/20 shadow-lg scale-[1.02]'
-                          : isPast 
+                          : isPast
                             ? 'border-green-800/50 bg-green-900/10'
                             : isFuture
                               ? 'border-purple-800/50 bg-purple-900/10 opacity-70'
                               : 'border-border-color hover:border-blue-800/50'
-                      }`}
+                        }`}
                     >
                       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
                         <div className="flex-1">
                           <div className="flex items-start gap-3">
-                            <div className={`p-2 rounded-lg ${
-                              cambio.accion === 'cambio_maquina' ? 'bg-purple-900/30' :
-                              cambio.accion === 'edicion_manual' ? 'bg-blue-900/30' :
-                              cambio.accion === 'nueva_orden' ? 'bg-green-900/30' :
-                              cambio.accion === 'recarga_datos' ? 'bg-gray-800' :
-                              'bg-gray-800'
-                            }`}>
+                            <div className={`p-2 rounded-lg ${cambio.accion === 'cambio_maquina' ? 'bg-purple-900/30' :
+                                cambio.accion === 'edicion_manual' ? 'bg-blue-900/30' :
+                                  cambio.accion === 'nueva_orden' ? 'bg-green-900/30' :
+                                    cambio.accion === 'recarga_datos' ? 'bg-gray-800' :
+                                      'bg-gray-800'
+                              }`}>
                               {cambio.accion === 'cambio_maquina' && <ArrowLeftRight size={20} className="text-purple-400" />}
                               {cambio.accion === 'edicion_manual' && <Edit2 size={20} className="text-blue-400" />}
                               {cambio.accion === 'nueva_orden' && <Plus size={20} className="text-green-400" />}
@@ -2304,7 +2306,7 @@ const API = import.meta.env.VITE_API_URL;
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex flex-col items-end gap-2 min-w-[150px]">
                           <div className="text-xs text-secondary whitespace-nowrap">
                             {new Date(cambio.timestamp).toLocaleString('es-ES', {
@@ -2336,9 +2338,8 @@ const API = import.meta.env.VITE_API_URL;
                                     }
                                   }
                                 }}
-                                className={`btn btn-xs ${
-                                  index < indiceHistorial ? 'btn-primary' : 'btn-secondary'
-                                }`}
+                                className={`btn btn-xs ${index < indiceHistorial ? 'btn-primary' : 'btn-secondary'
+                                  }`}
                                 title={index < indiceHistorial ? 'Volver a este estado' : 'Avanzar a este estado'}
                               >
                                 {index < indiceHistorial ? (
