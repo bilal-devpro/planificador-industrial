@@ -579,7 +579,7 @@ const [resumen, setResumen] = useState({
                           <td className="font-medium">{item.producto_nombre || 'Sin nombre'}</td>
                           <td className="hidden md:table-cell font-mono">{item.item_no}</td>
                           <td className={`text-right font-bold ${getColor()}`}>
-                            {item.qty_base.toLocaleString()}
+                            {(item.qty_base || 0).toLocaleString()}
                           </td>
                           <td className="hidden sm:table-cell">{item.bin_code || '-'}</td>
                           <td className="hidden lg:table-cell">
