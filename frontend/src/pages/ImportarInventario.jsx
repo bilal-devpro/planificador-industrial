@@ -72,7 +72,7 @@ const ImportarInventario = () => {
         formData.append('archivo', archivo);
 
         try {
-            const response = await fetch(`${API}/api/importar/inventario-fisico`, {
+            const response = await fetch(`${API}/api/inventario/importar`, {
                 method: 'POST',
                 body: formData
             });
