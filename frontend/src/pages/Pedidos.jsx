@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Package, 
-  Upload, 
-  Plus, 
-  Filter, 
+import {
+  Package,
+  Upload,
+  Plus,
+  Filter,
   Download,
   AlertTriangle,
   Clock,
@@ -30,15 +30,15 @@ const Pedidos = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(15);
-const [resumen, setResumen] = useState({
-  pedidos: { total: 0, cantidad_total: 0 },
-  stock: { productos_unicos: 0, cantidad_total: 0 },
-  stock_bajo: 0,
-  stock_critico: 0,
-  stock_normal: 0,
-  stock_excedente: 0,
-  maquinas: { oee: 0 }
-});
+  const [resumen, setResumen] = useState({
+    pedidos: { total: 0, cantidad_total: 0 },
+    stock: { productos_unicos: 0, cantidad_total: 0 },
+    stock_bajo: 0,
+    stock_critico: 0,
+    stock_normal: 0,
+    stock_excedente: 0,
+    maquinas: { oee: 0 }
+  });
   const [showFilters, setShowFilters] = useState(true);
 
   // 🔥 URL del backend
@@ -52,10 +52,10 @@ const [resumen, setResumen] = useState({
     try {
       const pedidosRes = await fetch(`${API}/api/dashboard-excel/pedidos`);
       const pedidosData = await pedidosRes.json();
-      
+
       const resumenRes = await fetch(`${API}/api/dashboard-excel/resumen`);
       const resumenData = await resumenRes.json();
-      
+
       setPedidos(pedidosData.pedidos || []);
       setResumen(resumenData.resumen);
       setLoading(false);
@@ -114,7 +114,7 @@ const [resumen, setResumen] = useState({
     try {
       const response = await fetch(`${API}/api/dashboard-excel/exportar/pedidos-atrasados`);
       const blob = await response.blob();
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -123,7 +123,7 @@ const [resumen, setResumen] = useState({
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       setTimeout(() => {
         alert('✅ Exportación completada: pedidos_pendientes.xlsx');
       }, 100);
@@ -159,14 +159,14 @@ const [resumen, setResumen] = useState({
           </p>
         </div>
         <div className="flex gap-3">
-          <button 
+          <button
             onClick={fetchData}
             className="btn btn-secondary flex items-center gap-2"
           >
             <RefreshCw size={18} />
             Actualizar
           </button>
-          <button 
+          <button
             onClick={exportToExcel}
             className="btn btn-primary flex items-center gap-2"
           >
@@ -352,7 +352,7 @@ const [resumen, setResumen] = useState({
                 </tr>
               ) : (
                 currentItems.map((pedido) => (
-                  <tr 
+                  <tr
                     key={pedido.id}
                     className={pedido.estado_stock === 'stock_insuficiente' ? 'bg-red-900/20' : ''}
                   >
@@ -411,10 +411,10 @@ const [resumen, setResumen] = useState({
         {totalPages > 1 && (
           <div className="flex justify-between items-center mt-6 pt-4 border-t border-border-color">
             <div className="text-sm text-secondary">
-              Página {currentPage} de {totalPages} - 
+              Página {currentPage} de {totalPages} -
               Mostrando {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredPedidos.length)} de {filteredPedidos.length} pedidos
             </div>
-            
+
             <div className="flex gap-2">
               <button
                 className="btn btn-secondary btn-sm"
@@ -424,18 +424,17 @@ const [resumen, setResumen] = useState({
                 <ChevronLeft size={16} />
                 Anterior
               </button>
-              
+
               <div className="flex gap-1">
                 {[...Array(Math.min(5, totalPages))].map((_, index) => {
                   const pageNum = index + 1;
                   return (
                     <button
                       key={pageNum}
-                      className={`px-3 py-1 rounded ${
-                        currentPage === pageNum 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-bg-secondary text-text-primary hover:bg-bg-surface'
-                      }`}
+                      className={`px-3 py-1 rounded ${currentPage === pageNum
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-bg-secondary text-text-primary hover:bg-bg-surface'
+                        }`}
                       onClick={() => setCurrentPage(pageNum)}
                     >
                       {pageNum}
@@ -446,7 +445,7 @@ const [resumen, setResumen] = useState({
                   <span className="px-3 py-1 text-secondary">...</span>
                 )}
               </div>
-              
+
               <button
                 className="btn btn-secondary btn-sm"
                 disabled={currentPage === totalPages}
@@ -460,50 +459,85 @@ const [resumen, setResumen] = useState({
         )}
       </div>
 
-      {/* Estadísticas por Cliente - ✅ CORREGIDO */}
+      {/* Estadísticas por Cliente */}
       {filteredPedidos.length > 0 && clientesUnicos.length > 0 && (
         <div className="card">
           <div className="card-header">
             <div className="card-title">📊 Estadísticas por Cliente</div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {clientesUnicos.map((cliente, index) => {
-              const pedidosCliente = filteredPedidos.filter(p => p.customer_name === cliente);
-              const totalCantidad = pedidosCliente.reduce((sum, p) => sum + p.qty_pending, 0);
-              const stockInsuficiente = pedidosCliente.filter(p => p.estado_stock === 'stock_insuficiente').length;
-              
+              const pedidosCliente = filteredPedidos.filter(
+                p => p.customer_name === cliente
+              );
+
+              // 🔥 Siempre número seguro
+              const totalCantidad = pedidosCliente.reduce(
+                (sum, p) => sum + (p.qty_pending || 0),
+                0
+              );
+
+              // 🔥 Evita -Infinity y undefined
+              const maxQty = Math.max(
+                ...pedidos.map(p => p.qty_pending || 0),
+                0
+              );
+
+              // 🔥 Porcentaje seguro
+              const porcentaje =
+                maxQty > 0 ? Math.min((totalCantidad / maxQty) * 100, 100) : 0;
+
+              // 🔥 Stock insuficiente seguro
+              const stockInsuficiente = pedidosCliente.filter(
+                p => p.estado_stock === "stock_insuficiente"
+              ).length;
+
               return (
                 <div key={index} className="border border-border-color rounded-lg p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <div className="font-bold text-lg">{cliente}</div>
-                      <div className="text-sm text-secondary">{pedidosCliente.length} pedidos</div>
+                      <div className="text-sm text-secondary">
+                        {pedidosCliente.length} pedidos
+                      </div>
                     </div>
+
                     {stockInsuficiente > 0 && (
                       <AlertTriangle className="text-accent-red" size={24} />
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
+                    {/* Total unidades */}
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span className="text-secondary">Total Unidades</span>
-                        <span className="font-bold">{totalCantidad.toLocaleString()}</span>
+
+                        {/* 🔥 Siempre número seguro */}
+                        <span className="font-bold">
+                          {(totalCantidad || 0).toLocaleString()}
+                        </span>
                       </div>
+
+                      {/* Barra de progreso */}
                       <div className="w-full bg-bg-secondary rounded-full h-2">
-                        <div 
+                        <div
                           className="h-2 rounded-full bg-blue-500"
-                          style={{ 
-                            width: `${Math.min((totalCantidad / (Math.max(...pedidos.map(p => p.qty_pending)) || 1)) * 100, 100)}%` 
-                          }}
+                          style={{ width: `${porcentaje}%` }}
                         ></div>
                       </div>
                     </div>
-                    
+
+                    {/* Stock insuficiente */}
                     <div className="flex justify-between text-sm">
                       <span className="text-secondary">Stock Insuficiente</span>
-                      <span className={`font-bold ${stockInsuficiente > 0 ? 'text-accent-red' : 'text-accent-green'}`}>
+                      <span
+                        className={`font-bold ${stockInsuficiente > 0
+                            ? "text-accent-red"
+                            : "text-accent-green"
+                          }`}
+                      >
                         {stockInsuficiente}
                       </span>
                     </div>

@@ -15,7 +15,27 @@ router.post('/importar', upload.single('archivo'), async (req, res) => {
 
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const pedidos = xlsx.utils.sheet_to_json(sheet);
+    const rows = xlsx.utils.sheet_to_json(sheet);
+
+    const nombreArchivo = req.file.originalname || 'alupak.xlsx';
+
+    // 🔥 Normalizamos aquí
+    const pedidos = rows.map(r => ({
+      // para mostrar en frontend
+      customer_name: r.CompanyName || '',
+      no_sales_line: r.No_SalesLine || '',
+      qty_pending: r.Quantity_SalesLine || 0,
+
+      // para guardar en BD (lo usará database.js)
+      CustomerName: r.CompanyName || '',
+      No_SalesLine: r.No_SalesLine || '',
+      Qty_pending: r.Quantity_SalesLine || 0,
+      archivo_original: nombreArchivo,
+
+      // por si quieres mostrar más cosas
+      description: r.Description_SalesLine || '',
+      document_of: r.DocumentOF || ''
+    }));
 
     res.json({
       success: true,
