@@ -1,3 +1,8 @@
+const express = require('express');
+const router = express.Router();
+const { pool } = require('../database');
+
+// 🔥 Obtener últimos registros de inventario físico
 router.get('/ultimos', async (req, res) => {
   try {
     const resultado = await pool.query(`
