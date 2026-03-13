@@ -110,10 +110,10 @@ router.get('/ultimos', async (req, res) => {
     }
 });
 //pi/inventario/ultimos
-router.get('/inventario/ultimos', async (req, res) => {
-    try {
-        const resultado = await pool.query(`
-        SELECT
+router.get('/ultimos', async (req, res) => {
+  try {
+    const resultado = await pool.query(`
+      SELECT
         id,
         item_no,
         bin_code,
@@ -124,20 +124,22 @@ router.get('/inventario/ultimos', async (req, res) => {
         lote_numero,
         archivo_original,
         usuario_carga,
+        fecha_importacion,
         fecha_carga
       FROM inventario_fisico
-      ORDER BY fecha_carga DESC
+      ORDER BY fecha_importacion DESC
       LIMIT 200
     `);
 
-        res.json({
-            success: true,
-            pedidos: resultado.rows
-        });
+    res.json({
+      success: true,
+      inventario: resultado.rows
+    });
 
-    } catch (error) {
-        console.error("❌ Error obteniendo últimos pedidos:", error);
-        res.status(500).json({ success: false, error: error.message });
-    }
+  } catch (error) {
+    console.error("❌ Error obteniendo últimos registros de inventario:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
+
 module.exports = router;
