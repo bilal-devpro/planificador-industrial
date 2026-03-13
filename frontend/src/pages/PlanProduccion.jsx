@@ -3,7 +3,7 @@ import {
   Factory, Play, Pause, CheckCircle, AlertTriangle, Eye, Download, Plus, RefreshCw,
   Package, Clock, Calendar, HardHat, TrendingUp, Database, Edit2, Save, X, Settings,
   Cpu, Calculator, MapPin, AlertCircle, FileSpreadsheet, Hash, Tag, TrendingUp as TrendingUpIcon,
-  Info, Lock, Unlock, Trash2, Zap, SortAsc, SortDesc, ArrowUpDown, FilterX, ChevronUp, ChevronDown,
+  Info, Lock, Unlock, Trash2, Zap, SortAsc, SortDesc, ArrowUpDown, FilterX, ChevronUp, ChevronDown,FileText,
   Search as SearchIcon,
   // ✅ AGREGA ESTA LÍNEA:
   History, Undo, Redo, Scale, ArrowLeftRight  // Asegúrate de incluir History, Undo y Redo
