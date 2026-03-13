@@ -101,7 +101,7 @@ const ImportarInventario = () => {
                         ...data.estadisticas,
                         registros_extraidos: cleanedInventario.length,
                         filas_filtradas: filasFiltradas,
-                    cantidad_total: cleanedInventario.reduce((sum, item) => sum + Number(item.qty_base), 0)
+                        cantidad_total: cleanedInventario.reduce((sum, item) => sum + Number(item.qty_base), 0)
                     }
                 };
 
@@ -505,22 +505,25 @@ const ImportarInventario = () => {
                                                 <td className="font-medium">
                                                     <div className="flex items-center gap-2">
                                                         <Package className="w-4 h-4 text-green-400" />
-                                                        {registro.ItemNo_ItemJournalLine}
+                                                        {registro.item_no || 'Sin ItemNo'}
                                                     </div>
                                                 </td>
                                                 <td className="font-mono bg-gray-800/50 px-2 py-1 rounded">
                                                     <div className="flex items-center gap-1">
                                                         <MapPin className="w-3 h-3 text-yellow-400" />
-                                                        {registro.BinCode_ItemJournalLine}
+                                                        {registro.bin_code || 'SIN_UBICACION'}
                                                     </div>
                                                 </td>
                                                 <td className="font-mono">
-                                                    {registro.ReservEntryBufferLotNo || '-'}
+                                                    {registro.lot_no || 'SIN_LOTE'}
                                                 </td>
                                                 <td className="text-right font-bold text-lg text-green-400">
                                                     <div className="flex items-center justify-end gap-1">
                                                         <Scale className="w-4 h-4" />
-                                                        {registro.ReservEntryBufferQtyBase.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        {Number(registro.qty_base || 0).toLocaleString('es-ES', {
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 2
+                                                        })}
                                                     </div>
                                                 </td>
                                             </tr>
