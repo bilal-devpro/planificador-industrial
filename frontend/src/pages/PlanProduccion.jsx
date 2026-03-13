@@ -205,7 +205,7 @@ const PlanProduccion = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [focusTrapActive, setFocusTrapActive] = useState(false);
   const lastFocusedElement = useRef(null);
-};
+
 // Función para anunciar cambios a lectores de pantalla
 const announceToScreenReader = (message, priority = 'polite') => {
   const announcement = {
@@ -220,7 +220,7 @@ const announceToScreenReader = (message, priority = 'polite') => {
     setAnnouncements(prev => prev.filter(a => a.id !== announcement.id));
   }, 5000);
 };
-
+};
 // Función para manejar foco en modales
 const handleModalFocus = (modalRef, isOpen) => {
   if (isOpen) {
