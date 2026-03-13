@@ -815,7 +815,7 @@ const PlanProduccion = () => {
   };
 
   // ✅ GUARDAR CAMBIOS CON HISTORIAL Y SINCRONIZACIÓN
-  const handleSave = (rowId) => {
+  const handleSave = async (rowId) => {
     const row = planManual.find(r => r.id === rowId);
     if (!row) {
       announceToScreenReader('Error: fila no encontrada', 'assertive');
@@ -1054,7 +1054,7 @@ const PlanProduccion = () => {
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Panel de Configuración Rápida de OEE - ¡AHORA SIN SLIDERS! */}
       <div className="card bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-800/50">
@@ -1393,7 +1393,6 @@ const PlanProduccion = () => {
                     >
                       Generación {orden.campo === 'generacion' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    </th>
                     <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_pendiente')} title="Cantidad total pedida por el cliente">
                       Cantidad Pedida {orden.campo === 'cantidad_pendiente' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
                     </th>
@@ -1682,7 +1681,7 @@ const PlanProduccion = () => {
                 </button>
               </div>
             </div>
-          </div>
+          </section>
         )}
 
         {/* Vista de Historial de Cambios */}
