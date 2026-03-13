@@ -56,13 +56,20 @@ router.post('/guardar', async (req, res) => {
       });
     }
 
-    // 🔥 Añadir archivo_original a cada pedido
-    const pedidosConArchivo = pedidos.map(p => ({
+    // 🔥 Normalizar valores peligrosos
+    const pedidosLimpios = pedidos.map(p => ({
       ...p,
+      CustomerName: p.CustomerName === "NULL" ? "" : p.CustomerName,
+      No_SalesLine: p.No_SalesLine === "NULL" ? "" : p.No_SalesLine,
+      Qty_pending: 
+        p.Qty_pending === "NULL" || p.Qty_pending === "" || p.Qty_pending == null
+          ? 0
+          : Number(p.Qty_pending),
+
       archivo_original: nombreArchivo
     }));
 
-    const resultado = await guardarAlupakPedidos(pedidosConArchivo, usuario);
+    const resultado = await guardarAlupakPedidos(pedidosLimpios, usuario);
 
     res.json({
       success: true,
