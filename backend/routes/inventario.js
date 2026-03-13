@@ -1,36 +1,105 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../database');
+const multer = require('multer');
+const xlsx = require('xlsx');
+const { pool, guardarAlupakPedidos } = require('../database');
 
-// 🔥 Obtener últimos registros de inventario físico
+const upload = multer({ storage: multer.memoryStorage() });
+
+// IMPORTAR
+router.post('/importar', upload.single('archivo'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No se envió archivo' });
+        }
+
+        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = xlsx.utils.sheet_to_json(sheet);
+
+        const nombreArchivo = req.file.originalname || 'alupak.xlsx';
+
+        const pedidos = rows.map(r => ({
+            customer_name: r.CompanyName || '',
+            no_sales_line: r.No_SalesLine || '',
+            qty_pending: r.Quantity_SalesLine || 0,
+
+            CustomerName: r.CompanyName || '',
+            No_SalesLine: r.No_SalesLine || '',
+            Qty_pending: r.Quantity_SalesLine || 0,
+
+            archivo_original: nombreArchivo
+        }));
+
+        res.json({ success: true, pedidos });
+
+    } catch (error) {
+        console.error("❌ Error procesando Excel:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GUARDAR
+router.post('/guardar', async (req, res) => {
+    try {
+        const { pedidos, nombreArchivo, usuario = 'system' } = req.body;
+
+        if (!pedidos || !Array.isArray(pedidos)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Datos inválidos: se requiere array de pedidos'
+            });
+        }
+
+        const pedidosLimpios = pedidos.map(p => ({
+            ...p,
+            CustomerName: p.CustomerName === "NULL" ? "" : p.CustomerName,
+            No_SalesLine: p.No_SalesLine === "NULL" ? "" : p.No_SalesLine,
+            Qty_pending:
+                p.Qty_pending === "NULL" || p.Qty_pending === "" || p.Qty_pending == null
+                    ? 0
+                    : Number(p.Qty_pending),
+            archivo_original: nombreArchivo
+        }));
+
+        const resultado = await guardarAlupakPedidos(pedidosLimpios, usuario);
+
+        res.json({
+            success: true,
+            mensaje: `Guardados ${resultado.guardados} pedidos`,
+            estadisticas: resultado
+        });
+
+    } catch (error) {
+        console.error('❌ Error guardando ALUPAK:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 🔥 SOLO UNA RUTA /ultimos (la correcta)
 router.get('/ultimos', async (req, res) => {
   try {
     const resultado = await pool.query(`
-      SELECT
+      SELECT 
         id,
-        item_no,
-        bin_code,
-        lot_no,
-        qty_base,
-        tipo_registro,
-        of_numero,
-        lote_numero,
+        customer_name,
+        no_sales_line,
+        qty_pending,
         archivo_original,
         usuario_carga,
-        fecha_importacion,
-        fecha_carga
-      FROM inventario_fisico
+        fecha_importacion
+      FROM alupak_pedidos
       ORDER BY fecha_importacion DESC
       LIMIT 200
     `);
 
     res.json({
       success: true,
-      inventario: resultado.rows
+      pedidos: resultado.rows
     });
 
   } catch (error) {
-    console.error("❌ Error obteniendo últimos registros de inventario:", error);
+    console.error("❌ Error obteniendo últimos pedidos ALUPAK:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
