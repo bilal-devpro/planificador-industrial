@@ -6,26 +6,33 @@ const { pool } = require('../database');
 router.get('/ultimos', async (req, res) => {
   try {
     const resultado = await pool.query(`
-      SELECT 
+      SELECT
         id,
-        customer_name,
-        no_sales_line,
-        qty_pending,
+        item_no,
+        bin_code,
+        lot_no,
+        qty_base,
+        tipo_registro,
+        of_numero,
+        lote_numero,
         archivo_original,
         usuario_carga,
-        fecha_importacion
-      FROM alupak_pedidos
+        fecha_importacion,
+        fecha_carga
+      FROM inventario_fisico
       ORDER BY fecha_importacion DESC
       LIMIT 200
     `);
 
     res.json({
       success: true,
-      pedidos: resultado.rows
+      inventario: resultado.rows
     });
 
   } catch (error) {
-    console.error("❌ Error obteniendo últimos pedidos ALUPAK:", error);
+    console.error("❌ Error obteniendo últimos registros de inventario:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+module.exports = router;
