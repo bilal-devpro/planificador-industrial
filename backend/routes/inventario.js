@@ -115,4 +115,18 @@ router.get('/ultimos', async (req, res) => {
     }
 });
 
+/* ============================================================
+   📌 LIMPIAR INVENTARIO
+   ============================================================ */
+router.delete('/limpiar', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM inventario_fisico');
+    await pool.query('DELETE FROM historial_importaciones WHERE tipo = $1', ['inventario']);
+    res.json({ success: true, message: 'Datos de inventario eliminados correctamente' });
+  } catch (error) {
+    console.error('❌ Error limpiando inventario:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;

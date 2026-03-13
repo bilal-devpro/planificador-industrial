@@ -64,6 +64,36 @@ async function initDatabase() {
         actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS planes_produccion (
+        id TEXT PRIMARY KEY,
+        alupak_pedido_id INTEGER REFERENCES alupak_pedidos(id),
+        customer_name TEXT,
+        no_sales_line TEXT,
+        producto_nombre TEXT,
+        cantidad_pendiente INTEGER,
+        stock_disponible_original INTEGER DEFAULT 0,
+        stock_disponible_ajustado INTEGER DEFAULT 0,
+        cantidad_a_producir INTEGER DEFAULT 0,
+        cantidad_planificada INTEGER DEFAULT 0,
+        fecha_inicio DATE,
+        fecha_fin DATE,
+        linea_asignada TEXT,
+        maquina_asignada TEXT,
+        generacion TEXT,
+        prioridad TEXT DEFAULT '3',
+        estado TEXT DEFAULT 'requiere_produccion',
+        observaciones TEXT,
+        tiempo_estimado_min INTEGER DEFAULT 0,
+        oee_aplicado REAL DEFAULT 0.85,
+        creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        es_manual BOOLEAN DEFAULT FALSE,
+        unidades_por_caja INTEGER,
+        cajas_pendientes INTEGER,
+        cajas_a_producir INTEGER,
+        cajas_stock_disponible INTEGER
+      );
+
       CREATE INDEX IF NOT EXISTS idx_alupak_usuario_fecha 
         ON alupak_pedidos(usuario_carga, fecha_carga);
 

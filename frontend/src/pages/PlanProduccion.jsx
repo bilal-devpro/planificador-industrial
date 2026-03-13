@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Factory, Play, Pause, CheckCircle, AlertTriangle, Eye, Download, Plus, RefreshCw,
   Package, Clock, Calendar, HardHat, TrendingUp, Database, Edit2, Save, X, Settings,
@@ -6,7 +6,7 @@ import {
   Info, Lock, Unlock, Trash2, Zap, SortAsc, SortDesc, ArrowUpDown, FilterX, ChevronUp, ChevronDown,
   Search as SearchIcon,
   // ✅ AGREGA ESTA LÍNEA:
-  History, Undo, Redo, Scale  // Asegúrate de incluir History, Undo y Redo
+  History, Undo, Redo, Scale, ArrowLeftRight  // Asegúrate de incluir History, Undo y Redo
 } from 'lucide-react';
 import LoteBadge from '../components/LoteBadge';
 
@@ -198,6 +198,50 @@ const PlanProduccion = () => {
   const [indiceHistorial, setIndiceHistorial] = useState(-1);
   const [datosOriginales, setDatosOriginales] = useState(null);
 
+  // === ACCESIBILIDAD AAA - REFS Y ESTADOS ===
+  const modalRef = useRef(null);
+  const historyModalRef = useRef(null);
+  const mainContentRef = useRef(null);
+  const [announcements, setAnnouncements] = useState([]);
+  const [focusTrapActive, setFocusTrapActive] = useState(false);
+  const lastFocusedElement = useRef(null);
+
+  // Función para anunciar cambios a lectores de pantalla
+  const announceToScreenReader = (message, priority = 'polite') => {
+    const announcement = {
+      id: Date.now(),
+      message,
+      priority
+    };
+    setAnnouncements(prev => [...prev, announcement]);
+    
+    // Remover anuncio después de 5 segundos
+    setTimeout(() => {
+      setAnnouncements(prev => prev.filter(a => a.id !== announcement.id));
+    }, 5000);
+  };
+
+  // Función para manejar foco en modales
+  const handleModalFocus = (modalRef, isOpen) => {
+    if (isOpen) {
+      lastFocusedElement.current = document.activeElement;
+      setFocusTrapActive(true);
+      setTimeout(() => {
+        const focusableElements = modalRef.current?.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements?.length > 0) {
+          focusableElements[0].focus();
+        }
+      }, 100);
+    } else {
+      setFocusTrapActive(false);
+      if (lastFocusedElement.current) {
+        lastFocusedElement.current.focus();
+      }
+    }
+  };
+
   // Escuchar cambios de OEE desde Configuración y otros componentes
   useEffect(() => {
     fetchData();
@@ -206,6 +250,7 @@ const PlanProduccion = () => {
       console.log('🔄 Detectado cambio de OEE desde Configuración. Recargando datos...');
       if (event.detail && event.detail.oeeValues) {
         setOeeMaquinas(event.detail.oeeValues);
+        announceToScreenReader('Valores de OEE actualizados desde configuración');
       } else {
         fetchData();
       }
@@ -214,31 +259,83 @@ const PlanProduccion = () => {
     const handlePlanUpdated = () => {
       console.log('🔄 Detectada actualización del plan desde otro componente. Recargando datos...');
       fetchData();
+      announceToScreenReader('Plan de producción actualizado desde otro componente');
     };
     const handleDatosActualizados = () => {
       console.log('🔄 Detectados nuevos datos importados. Recalculando plan inteligente...');
       fetchData();
+      announceToScreenReader('Nuevos datos importados, recalculando plan de producción');
     };
 
-    window.addEventListener('datosActualizados', handleDatosActualizados);
-
-    // En el return del useEffect, agregar:
-    window.removeEventListener('datosActualizados', handleDatosActualizados);
     window.addEventListener('oeeUpdated', handleOeeUpdate);
     window.addEventListener('planUpdated', handlePlanUpdated);
+    window.addEventListener('datosActualizados', handleDatosActualizados);
 
     return () => {
       window.removeEventListener('oeeUpdated', handleOeeUpdate);
       window.removeEventListener('planUpdated', handlePlanUpdated);
+      window.removeEventListener('datosActualizados', handleDatosActualizados);
     };
   }, []);
 
-  // Detectar cambios no guardados al intentar actualizar
+  // Manejar foco en modales para accesibilidad
+  useEffect(() => {
+    handleModalFocus(modalRef, showModal);
+  }, [showModal]);
+
+  useEffect(() => {
+    handleModalFocus(historyModalRef, showHistoryModal);
+  }, [showHistoryModal]);
+
+  // Navegación por teclado global
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Atajos de teclado para accesibilidad
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'z':
+            e.preventDefault();
+            if (!e.shiftKey) {
+              deshacer();
+            } else {
+              rehacer();
+            }
+            break;
+          case 'y':
+            e.preventDefault();
+            rehacer();
+            break;
+          case '/':
+            e.preventDefault();
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+              searchInput.focus();
+              announceToScreenReader('Foco movido al campo de búsqueda');
+            }
+            break;
+        }
+      }
+
+      // Escape para cerrar modales
+      if (e.key === 'Escape') {
+        if (showHistoryModal) {
+          setShowHistoryModal(false);
+        } else if (showModal) {
+          setShowModal(false);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, showHistoryModal]);
+
+  // Anunciar cambios en el plan
   useEffect(() => {
     if (planManual.length > 0) {
-      setDatosOriginales(JSON.stringify(planManual));
+      announceToScreenReader(`${planManual.length} órdenes de producción cargadas`);
     }
-  }, [planManual]);
+  }, [planManual.length]);
   const API = import.meta.env.VITE_API_URL;
   const fetchData = async (forzarRecarga = false) => {
     // Verificar cambios no guardados antes de recargar
@@ -250,12 +347,13 @@ const PlanProduccion = () => {
 
     try {
       setLoading(true);
-      const [pedidosRes, lineasRes, resumenRes, stockRes, configRes] = await Promise.all([
+      const [pedidosRes, lineasRes, resumenRes, stockRes, configRes, planesRes] = await Promise.all([
         fetch(`${API}/api/dashboard-excel/pedidos`),
         fetch(`${API}/api/lineas`),
         fetch(`${API}/api/dashboard-excel/resumen`),
         fetch(`${API}/api/dashboard-excel/stock`),
-        fetch(`${API}/api/configuracion`)
+        fetch(`${API}/api/configuracion`),
+        fetch(`${API}/api/plan/produccion`)
       ]);
 
       const pedidosData = await pedidosRes.json();
@@ -263,6 +361,7 @@ const PlanProduccion = () => {
       const resumenData = await resumenRes.json();
       const stockData = await stockRes.json();
       const configData = await configRes.json();
+      const planesData = await planesRes.json();
 
       // Cargar OEE por máquina desde configuración
       const nuevoOee = { M1: 0.85, M2: 0.85, M3: 0.85, M4: 0.85 };
@@ -280,14 +379,29 @@ const PlanProduccion = () => {
       setLineas(lineasData.lineas || []);
       setResumen(resumenData.resumen || {});
       setStockData(stockData.stock || []);
+
+      // Cargar planes existentes desde BD
+      const planesExistentes = planesData.planes || [];
+      setPlanManual(planesExistentes);
+
       setLoading(false);
-      // Calcular plan inteligente automáticamente si hay pedidos y stock
-      if (pedidosData.pedidos && pedidosData.pedidos.length > 0 && stockData.stock && stockData.stock.length > 0) {
+
+      // Calcular plan inteligente automáticamente si hay pedidos y stock, y no hay planes existentes (a menos que sea forzarRecarga)
+      if (pedidosData.pedidos && pedidosData.pedidos.length > 0 && stockData.stock && stockData.stock.length > 0 && (planesExistentes.length === 0 || forzarRecarga)) {
         const stockConsolidado = procesarStockConsolidado(stockData.stock);
         const planCalculado = crearPlanConCalculos(pedidosData.pedidos, stockConsolidado, nuevoOee);
         setPlanManual(planCalculado);
-      } else {
-        setPlanManual([]); // Si no hay datos, dejar vacío
+
+        // Guardar planes calculados en BD
+        try {
+          await fetch(`${API}/api/plan/produccion/bulk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ planes: planCalculado })
+          });
+        } catch (error) {
+          console.error('Error guardando planes calculados:', error);
+        }
       }
     } catch (error) {
       console.error('❌ Error cargando datos del plan:', error);
@@ -493,7 +607,7 @@ const PlanProduccion = () => {
           cajas_stock_disponible: cajasStockDisponible
         };
       }
-    });
+    }).filter(p => p.cantidad_a_producir > 0); // Solo incluir pedidos que requieren producción
   };
 
   // Manejar filtros
@@ -614,6 +728,7 @@ const PlanProduccion = () => {
     setIndiceHistorial(nuevoHistorial.length - 1);
     setDatosOriginales(JSON.stringify(snapshot));
     console.log(`✅ Historial guardado: ${accion || 'desconocido'} (${nuevoHistorial.length} estados)`);
+    announceToScreenReader(`Cambio guardado en historial: ${accion || 'desconocido'}`);
   };
 
   const deshacer = () => {
@@ -624,6 +739,9 @@ const PlanProduccion = () => {
       setIndiceHistorial(nuevoIndice);
       window.dispatchEvent(new Event('planUpdated'));
       console.log(`↩️ Deshacer: Volviendo al estado ${nuevoIndice + 1}/${historialCambios.length}`);
+      announceToScreenReader(`Deshacer realizado. Estado ${nuevoIndice + 1} de ${historialCambios.length}`);
+    } else {
+      announceToScreenReader('No hay cambios anteriores para deshacer');
     }
   };
 
@@ -635,6 +753,9 @@ const PlanProduccion = () => {
       setIndiceHistorial(nuevoIndice);
       window.dispatchEvent(new Event('planUpdated'));
       console.log(`↪️ Rehacer: Avanzando al estado ${nuevoIndice + 1}/${historialCambios.length}`);
+      announceToScreenReader(`Rehacer realizado. Estado ${nuevoIndice + 1} de ${historialCambios.length}`);
+    } else {
+      announceToScreenReader('No hay cambios posteriores para rehacer');
     }
   };
 
@@ -642,7 +763,7 @@ const PlanProduccion = () => {
   const handleOeeChange = async (maquina, valor) => {
     const valorNum = parseFloat(valor);
     if (isNaN(valorNum) || valorNum < 0.5 || valorNum > 1.0) {
-      // Validación silenciosa - no mostrar alertas
+      announceToScreenReader(`Valor de OEE inválido para ${maquina}. Debe estar entre 0.5 y 1.0`, 'assertive');
       return;
     }
 
@@ -668,10 +789,12 @@ const PlanProduccion = () => {
 
       // Feedback visual sutil en consola
       console.log(`✅ OEE de ${maquina} actualizado a ${(valorNum * 100).toFixed(0)}%`);
+      announceToScreenReader(`OEE de máquina ${maquina} actualizado a ${(valorNum * 100).toFixed(0)}%`);
     } catch (error) {
       console.error('Error guardando OEE:', error);
       // Restaurar valor anterior si falla (sin alertas molestas)
       setOeeMaquinas(prev => ({ ...prev, [maquina]: prev[maquina] }));
+      announceToScreenReader(`Error al guardar OEE de máquina ${maquina}`, 'assertive');
     } finally {
       setGuardandoOee(false);
     }
@@ -694,7 +817,10 @@ const PlanProduccion = () => {
   // ✅ GUARDAR CAMBIOS CON HISTORIAL Y SINCRONIZACIÓN
   const handleSave = (rowId) => {
     const row = planManual.find(r => r.id === rowId);
-    if (!row) return;
+    if (!row) {
+      announceToScreenReader('Error: fila no encontrada', 'assertive');
+      return;
+    }
 
     const oeeMaquina = oeeMaquinas[formData.maquina_asignada] || 0.85;
     const { tiempoMinutos } = calcularTiempoProduccion(
@@ -719,12 +845,37 @@ const PlanProduccion = () => {
     setEditingRow(null);
     setFormData({});
 
+    // Guardar cambios en BD
+    try {
+      await fetch(`${API}/api/plan/produccion`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          version_id: null,
+          pedido_id: updatedRow.alupak_pedido_id,
+          producto_id: null,
+          linea_id: lineas.find(l => l.codigo === updatedRow.linea_asignada)?.id || null,
+          cantidad: updatedRow.cantidad_planificada,
+          fecha_inicio: updatedRow.fecha_inicio,
+          fecha_fin: updatedRow.fecha_fin,
+          turno: '24h',
+          estado: updatedRow.estado,
+          oee: updatedRow.oee_aplicado,
+          observaciones: updatedRow.observaciones
+        })
+      });
+    } catch (error) {
+      console.error('Error guardando cambios en BD:', error);
+    }
+
     guardarEnHistorial(nuevoPlan, 'edicion_manual', {
       pedido: row.no_sales_line,
       cambios: Object.keys(formData).filter(k => formData[k] !== row[k])
     });
 
     window.dispatchEvent(new Event('planUpdated'));
+
+    announceToScreenReader(`Cambios guardados para el pedido ${row.no_sales_line}`);
 
     setTimeout(() => {
       console.log('💾 Cambios guardados en base de datos:', updatedRow);
@@ -802,13 +953,35 @@ const PlanProduccion = () => {
   );
 
   return (
-    <div className="space-y-6 max-w-[1920px] mx-auto px-4">
+    <>
+      {/* Skip link for screen readers */}
+      <a href="#main-content" className="skip-link">
+        Saltar al contenido principal
+      </a>
+
+      <div className="space-y-6 max-w-[1920px] mx-auto px-4" ref={mainContentRef} id="main-content">
+      {/* Área de anuncios para lectores de pantalla - ACCESIBILIDAD AAA */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        role="status"
+        aria-label="Anuncios del sistema"
+      >
+        {announcements.map(announcement => (
+          <div key={announcement.id} aria-live={announcement.priority}>
+            {announcement.message}
+          </div>
+        ))}
+      </div>
+
       {/* Header Mejorado con Información Clara del Horario */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4" role="banner">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-            <Factory size={32} className="text-purple-400" />
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3" id="main-heading">
+            <Factory size={32} className="text-purple-400" aria-hidden="true" />
             <span className="hidden md:inline">Plan de Producción Inteligente</span>
+            <span className="md:hidden">Plan Producción</span>
           </h1>
           <div className="mt-2 flex flex-wrap gap-3 items-center bg-bg-secondary/50 rounded-lg p-3">
             <div className="flex items-center gap-2 bg-green-900/30 text-green-400 px-3 py-1.5 rounded">
@@ -823,9 +996,14 @@ const PlanProduccion = () => {
               <Hash size={18} />
               <span className="font-medium">30 horas de cierre semanal</span>
             </div>
+            <div className="flex items-center gap-2 bg-purple-900/30 text-purple-400 px-3 py-1.5 rounded">
+              <Calculator size={18} />
+              <span className="font-medium">Cálculos automáticos con OEE</span>
+            </div>
           </div>
           <p className="text-secondary mt-3 max-w-2xl">
-            El sistema calcula automáticamente los tiempos de producción usando OEE real de cada máquina, rendimiento específico por producto, disponibilidad del horario 24/7 y estado del stock.
+            Sistema inteligente de planificación que optimiza la producción considerando stock disponible,
+            capacidad de máquinas, OEE específico y horario laboral 24/7 con cierres programados.
           </p>
         </div>
 
@@ -933,85 +1111,181 @@ const PlanProduccion = () => {
         </div>
       </div>
 
-      {/* Alertas */}
+      {/* Alertas mejoradas */}
       {pedidosSinPlan.length > 0 && (
         <div className="alert alert-warning">
           <AlertTriangle size={20} />
-          <div>
-            <strong>⚠️ {pedidosSinPlan.length} pedidos sin planificación</strong>
+          <div className="flex-1">
+            <strong>📋 {pedidosSinPlan.length} pedidos pendientes de planificación</strong>
             <p className="text-sm mt-1">
-              Estos pedidos no tienen una orden de producción planificada.
-              El sistema ha calculado automáticamente la cantidad a producir considerando el stock disponible para cada producto.
+              Estos pedidos requieren producción ya que no hay suficiente stock disponible.
+              El sistema calculará automáticamente las cantidades a producir considerando el inventario actual.
             </p>
+            <div className="mt-2 text-xs text-yellow-300">
+              💡 Tip: Importa datos de inventario actualizados para obtener cálculos más precisos.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mensaje cuando no hay pedidos */}
+      {pedidos.length === 0 && (
+        <div className="alert alert-info">
+          <Info size={20} />
+          <div className="flex-1">
+            <strong>📥 No hay pedidos importados</strong>
+            <p className="text-sm mt-1">
+              Para generar un plan de producción, primero importa los pedidos pendientes desde ALUPAK.
+            </p>
+            <div className="mt-2">
+              <a href="/importar-alupak" className="btn btn-primary btn-sm">
+                Ir a Importar ALUPAK
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mensaje cuando no hay stock */}
+      {pedidos.length > 0 && stockData.length === 0 && (
+        <div className="alert alert-info">
+          <Database size={20} />
+          <div className="flex-1">
+            <strong>📦 No hay datos de inventario</strong>
+            <p className="text-sm mt-1">
+              Importa el inventario físico para calcular automáticamente las cantidades que necesitan producción.
+            </p>
+            <div className="mt-2">
+              <a href="/importar-inventario" className="btn btn-primary btn-sm">
+                Ir a Importar Inventario
+              </a>
+            </div>
           </div>
         </div>
       )}
 
       {/* Filtros y Ordenación Mejorados */}
-      <div className="card">
+      <nav className="card" role="navigation" aria-label="Navegación principal del plan de producción">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-          <div className="flex flex-wrap gap-2 border-b border-border-color">
+          <div className="flex flex-wrap gap-2 border-b border-border-color" role="tablist" aria-label="Secciones del plan">
             <button
               className={`px-4 py-2 font-medium text-sm ${activeTab === 'planificacion' ? 'text-accent-purple border-b-2 border-accent-purple' : 'text-secondary'}`}
-              onClick={() => setActiveTab('planificacion')}
+              onClick={() => {
+                setActiveTab('planificacion');
+                announceToScreenReader('Vista de planificación inteligente activada');
+              }}
+              role="tab"
+              aria-selected={activeTab === 'planificacion'}
+              aria-controls="planificacion-panel"
+              id="tab-planificacion"
+              tabIndex={activeTab === 'planificacion' ? 0 : -1}
             >
-              <Factory size={16} className="inline mr-1" />
+              <Factory size={16} className="inline mr-1" aria-hidden="true" />
               Planificación Inteligente
             </button>
             <button
               className={`px-4 py-2 font-medium text-sm ${activeTab === 'maquinas' ? 'text-accent-purple border-b-2 border-accent-purple' : 'text-secondary'}`}
-              onClick={() => setActiveTab('maquinas')}
+              onClick={() => {
+                setActiveTab('maquinas');
+                announceToScreenReader('Vista de utilización de máquinas activada');
+              }}
+              role="tab"
+              aria-selected={activeTab === 'maquinas'}
+              aria-controls="maquinas-panel"
+              id="tab-maquinas"
+              tabIndex={activeTab === 'maquinas' ? 0 : -1}
             >
-              <Cpu size={16} className="inline mr-1" />
+              <Cpu size={16} className="inline mr-1" aria-hidden="true" />
               Utilización de Máquinas (24/7)
             </button>
             <button
               className={`px-4 py-2 font-medium text-sm ${activeTab === 'historial' ? 'text-accent-purple border-b-2 border-accent-purple' : 'text-secondary'}`}
-              onClick={() => setActiveTab('historial')}
+              onClick={() => {
+                setActiveTab('historial');
+                announceToScreenReader('Vista de historial de cambios activada');
+              }}
+              role="tab"
+              aria-selected={activeTab === 'historial'}
+              aria-controls="historial-panel"
+              id="tab-historial"
+              tabIndex={activeTab === 'historial' ? 0 : -1}
             >
-              <History size={16} className="inline mr-1" />
+              <History size={16} className="inline mr-1" aria-hidden="true" />
               Historial de Cambios
             </button>
           </div>
 
           {/* Filtros Mejorados */}
-          <div className="flex flex-wrap gap-3 w-full md:w-auto">
+          <div className="flex flex-wrap gap-3 w-full md:w-auto" role="search" aria-label="Filtros de búsqueda">
             <div className="relative flex-1 min-w-[200px] md:min-w-[240px]">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary" size={16} />
+              <label htmlFor="search-input" className="sr-only">Buscar por producto o cliente</label>
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary" size={16} aria-hidden="true" />
               <input
+                id="search-input"
                 type="text"
                 placeholder="Buscar producto, cliente..."
                 className="form-control pl-9 w-full text-sm py-1.5"
                 value={filtros.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={(e) => {
+                  handleFilterChange('search', e.target.value);
+                  announceToScreenReader(`Filtro de búsqueda actualizado: ${e.target.value || 'sin filtro'}`);
+                }}
+                aria-describedby="search-help"
               />
+              <div id="search-help" className="sr-only">
+                Busca por código de producto, nombre del producto o nombre del cliente
+              </div>
             </div>
 
+            <label htmlFor="estado-filter" className="sr-only">Filtrar por estado</label>
             <select
+              id="estado-filter"
               className="form-control w-auto text-sm py-1.5 min-w-[140px]"
               value={filtros.estado}
-              onChange={(e) => handleFilterChange('estado', e.target.value)}
+              onChange={(e) => {
+                handleFilterChange('estado', e.target.value);
+                announceToScreenReader(`Filtro de estado: ${e.target.value || 'todos los estados'}`);
+              }}
+              aria-describedby="estado-help"
             >
               <option value="">Todos los estados</option>
               <option value="planificado">Planificado</option>
               <option value="requiere_produccion">Requiere Producción</option>
               <option value="stock_suficiente">Stock Suficiente</option>
             </select>
+            <div id="estado-help" className="sr-only">
+              Filtra los pedidos por su estado actual en el plan de producción
+            </div>
 
+            <label htmlFor="generacion-filter" className="sr-only">Filtrar por generación</label>
             <select
+              id="generacion-filter"
               className="form-control w-auto text-sm py-1.5 min-w-[140px]"
               value={filtros.generacion}
-              onChange={(e) => handleFilterChange('generacion', e.target.value)}
+              onChange={(e) => {
+                handleFilterChange('generacion', e.target.value);
+                announceToScreenReader(`Filtro de generación: ${e.target.value || 'todas las generaciones'}`);
+              }}
+              aria-describedby="generacion-help"
             >
               <option value="">Todas las generaciones</option>
               <option value="G1">G1 (AL)</option>
               <option value="G2">G2 (AC)</option>
             </select>
+            <div id="generacion-help" className="sr-only">
+              Filtra por generación de producto: G1 para productos que empiezan con AL, G2 para productos que empiezan con AC
+            </div>
 
+            <label htmlFor="maquina-filter" className="sr-only">Filtrar por máquina</label>
             <select
+              id="maquina-filter"
               className="form-control w-auto text-sm py-1.5 min-w-[120px]"
               value={filtros.maquina}
-              onChange={(e) => handleFilterChange('maquina', e.target.value)}
+              onChange={(e) => {
+                handleFilterChange('maquina', e.target.value);
+                announceToScreenReader(`Filtro de máquina: ${e.target.value || 'todas las máquinas'}`);
+              }}
+              aria-describedby="maquina-help"
             >
               <option value="">Todas las máquinas</option>
               <option value="M1">M1</option>
@@ -1019,12 +1293,20 @@ const PlanProduccion = () => {
               <option value="M3">M3</option>
               <option value="M4">M4</option>
             </select>
+            <div id="maquina-help" className="sr-only">
+              Filtra los pedidos por la máquina asignada para su producción
+            </div>
 
             <button
               className="btn btn-secondary btn-sm flex items-center gap-1 px-3 py-1.5"
-              onClick={() => setFiltros({ estado: '', generacion: '', maquina: '', prioridad: '', search: '' })}
+              onClick={() => {
+                setFiltros({ estado: '', generacion: '', maquina: '', prioridad: '', search: '' });
+                announceToScreenReader('Todos los filtros han sido limpiados');
+              }}
+              aria-label="Limpiar todos los filtros de búsqueda"
+              title="Remover todos los filtros aplicados"
             >
-              <FilterX size={14} />
+              <FilterX size={14} aria-hidden="true" />
               Limpiar
             </button>
           </div>
@@ -1032,48 +1314,114 @@ const PlanProduccion = () => {
 
         {/* Vista de Planificación */}
         {activeTab === 'planificacion' && (
-          <div className="overflow-x-auto -mx-4 px-4">
+          <section
+            id="planificacion-panel"
+            role="tabpanel"
+            aria-labelledby="tab-planificacion"
+            className="overflow-x-auto -mx-4 px-4"
+          >
             <div className="min-w-[1400px]">
-              <table className="w-full text-sm">
+              <table
+                className="w-full text-sm"
+                role="table"
+                aria-label="Tabla de planificación de producción inteligente"
+                aria-describedby="table-description"
+              >
+                <caption id="table-description" className="sr-only">
+                  Tabla que muestra los pedidos de producción con información de stock, planificación y asignación de máquinas.
+                  Las columnas incluyen producto, cliente, generación, cantidades, fechas, máquina asignada y acciones.
+                </caption>
                 <thead>
                   <tr className="bg-bg-secondary/50">
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('no_sales_line')}>
-                      Producto {orden.campo === 'no_sales_line' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th
+                      className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap"
+                      onClick={() => {
+                        handleSort('no_sales_line');
+                        announceToScreenReader(`Ordenado por producto: ${orden.direccion === 'asc' ? 'ascendente' : 'descendente'}`);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSort('no_sales_line');
+                          announceToScreenReader(`Ordenado por producto: ${orden.direccion === 'asc' ? 'ascendente' : 'descendente'}`);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={orden.campo === 'no_sales_line' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}
+                      aria-label="Código del producto ALUPAK - Click para ordenar"
+                    >
+                      Producto {orden.campo === 'no_sales_line' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden md:table-cell" onClick={() => handleSort('customer_name')}>
-                      Cliente {orden.campo === 'customer_name' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th
+                      className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden md:table-cell"
+                      onClick={() => {
+                        handleSort('customer_name');
+                        announceToScreenReader(`Ordenado por cliente: ${orden.direccion === 'asc' ? 'ascendente' : 'descendente'}`);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSort('customer_name');
+                          announceToScreenReader(`Ordenado por cliente: ${orden.direccion === 'asc' ? 'ascendente' : 'descendente'}`);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={orden.campo === 'customer_name' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}
+                      aria-label="Nombre del cliente - Click para ordenar"
+                    >
+                      Cliente {orden.campo === 'customer_name' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('generacion')}>
-                      Generación {orden.campo === 'generacion' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th
+                      className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap"
+                      onClick={() => {
+                        handleSort('generacion');
+                        announceToScreenReader(`Ordenado por generación: ${orden.direccion === 'asc' ? 'ascendente' : 'descendente'}`);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSort('generacion');
+                          announceToScreenReader(`Ordenado por generación: ${orden.direccion === 'asc' ? 'ascendente' : 'descendente'}`);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={orden.campo === 'generacion' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}
+                      aria-label="Generación del producto - Click para ordenar"
+                    >
+                      Generación {orden.campo === 'generacion' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_pendiente')}>
-                      Pendiente {orden.campo === 'cantidad_pendiente' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap hidden sm:table-cell" onClick={() => handleSort('stock_disponible_ajustado')}>
-                      Stock Disp. {orden.campo === 'stock_disponible_ajustado' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_pendiente')} title="Cantidad total pedida por el cliente">
+                      Cantidad Pedida {orden.campo === 'cantidad_pendiente' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_a_producir')}>
+                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap hidden sm:table-cell" onClick={() => handleSort('stock_disponible_ajustado')} title="Stock disponible después de asignar a otros pedidos">
+                      Stock Disponible {orden.campo === 'stock_disponible_ajustado' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    </th>
+                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_a_producir')} title="Cantidad que necesita ser producida">
                       A Producir {orden.campo === 'cantidad_a_producir' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_planificada')}>
-                      Planificado {orden.campo === 'cantidad_planificada' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_planificada')} title="Cantidad planificada para producción">
+                      Planificada {orden.campo === 'cantidad_planificada' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('fecha_inicio')}>
-                      Fecha Inicio {orden.campo === 'fecha_inicio' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('fecha_inicio')} title="Fecha de inicio de producción">
+                      Inicio {orden.campo === 'fecha_inicio' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('fecha_fin')}>
-                      Fecha Fin {orden.campo === 'fecha_fin' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('fecha_fin')} title="Fecha estimada de finalización">
+                      Fin Estimado {orden.campo === 'fecha_fin' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('maquina_asignada')}>
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('maquina_asignada')} title="Máquina asignada para producción">
                       Máquina {orden.campo === 'maquina_asignada' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('tiempo_estimado_min')}>
-                      Tiempo Est. {orden.campo === 'tiempo_estimado_min' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('tiempo_estimado_min')} title="Tiempo estimado de producción en minutos">
+                      Tiempo (min) {orden.campo === 'tiempo_estimado_min' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden lg:table-cell" onClick={() => handleSort('prioridad')}>
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden lg:table-cell" onClick={() => handleSort('prioridad')} title="Prioridad de producción">
                       Prioridad {orden.campo === 'prioridad' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('estado')}>
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('estado')} title="Estado actual del pedido">
                       Estado {orden.campo === 'estado' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
                     </th>
                     <th className="py-3 px-3 text-left font-medium text-secondary whitespace-nowrap">Acciones</th>
@@ -1084,8 +1432,29 @@ const PlanProduccion = () => {
                     <tr>
                       <td colSpan="14" className="text-center py-12 text-secondary">
                         <Factory size={48} className="mx-auto mb-4 text-gray-600" />
-                        <p className="text-lg font-medium mb-2">No hay órdenes planificadas</p>
-                        <p className="max-w-md mx-auto">El sistema calculará automáticamente las órdenes al importar los datos de ALUPAK</p>
+                        <p className="text-lg font-medium mb-2">No hay órdenes de producción planificadas</p>
+                        <p className="max-w-md mx-auto mb-4">
+                          {pedidos.length === 0 
+                            ? "Importa pedidos desde ALUPAK para generar el plan de producción."
+                            : stockData.length === 0
+                            ? "Importa datos de inventario para calcular las cantidades a producir."
+                            : "Todos los pedidos tienen stock suficiente disponible."
+                          }
+                        </p>
+                        <div className="flex gap-3 justify-center">
+                          {pedidos.length === 0 && (
+                            <a href="/importar-alupak" className="btn btn-primary">
+                              <Package size={18} className="mr-2" />
+                              Importar ALUPAK
+                            </a>
+                          )}
+                          {pedidos.length > 0 && stockData.length === 0 && (
+                            <a href="/importar-inventario" className="btn btn-primary">
+                              <FileText size={18} className="mr-2" />
+                              Importar Inventario
+                            </a>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -1532,21 +1901,37 @@ const PlanProduccion = () => {
 
       {/* ✅ MODAL FUNCIONAL PARA NUEVA ORDEN - TOTALMENTE MEJORADO */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+          aria-describedby="modal-description"
+          ref={modalRef}
+        >
           <div className="bg-bg-primary rounded-lg p-6 w-full max-w-3xl max-h-[95vh] overflow-y-auto relative">
             {/* Header del Modal */}
             <div className="flex justify-between items-start mb-6 pb-4 border-b border-border-color">
-              <h3 className="font-bold text-xl flex items-center gap-3 text-accent-purple">
-                <Plus size={24} className="text-blue-400" />
+              <h3 id="modal-title" className="font-bold text-xl flex items-center gap-3 text-accent-purple">
+                <Plus size={24} className="text-blue-400" aria-hidden="true" />
                 Nueva Orden de Producción Manual
               </h3>
               <button
                 onClick={() => setShowModal(false)}
                 className="text-secondary hover:text-text-primary p-2 hover:bg-bg-secondary rounded-full transition"
-                aria-label="Cerrar modal"
+                aria-label="Cerrar modal de nueva orden"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setShowModal(false);
+                  }
+                }}
               >
-                <X size={24} />
+                <X size={24} aria-hidden="true" />
               </button>
+            </div>
+
+            <div id="modal-description" className="sr-only">
+              Formulario para crear una nueva orden de producción manual. Complete todos los campos requeridos marcados con asterisco.
             </div>
 
             <div className="space-y-6">
@@ -2185,19 +2570,36 @@ const PlanProduccion = () => {
 
       {/* ✅ MODAL DE HISTORIAL COMPLETO */}
       {showHistoryModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="history-modal-title"
+          aria-describedby="history-modal-description"
+          ref={historyModalRef}
+        >
           <div className="bg-bg-primary rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-xl flex items-center gap-2">
-                <History size={24} className="text-blue-400" />
+              <h3 id="history-modal-title" className="font-bold text-xl flex items-center gap-2">
+                <History size={24} className="text-blue-400" aria-hidden="true" />
                 Historial Completo de Cambios
               </h3>
               <button
                 onClick={() => setShowHistoryModal(false)}
                 className="text-secondary hover:text-text-primary"
+                aria-label="Cerrar modal del historial"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setShowHistoryModal(false);
+                  }
+                }}
               >
-                <X size={24} />
+                <X size={24} aria-hidden="true" />
               </button>
+            </div>
+
+            <div id="history-modal-description" className="sr-only">
+              Modal que muestra el historial completo de cambios en el plan de producción. Incluye controles para deshacer y rehacer cambios.
             </div>
 
             <div className="space-y-6">
@@ -2466,6 +2868,7 @@ const PlanProduccion = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
