@@ -9,6 +9,7 @@ import {
   History, Undo, Redo, Scale, ArrowLeftRight  // Asegúrate de incluir History, Undo y Redo
 } from 'lucide-react';
 import LoteBadge from '../components/LoteBadge';
+import { Helmet } from 'react-helmet-async';
 
 // CONFIGURACIÓN DE MÁQUINAS - ¡M4 ahora es G1 (Generación 1)!
 const CONFIG_MAQUINAS = {
@@ -206,76 +207,76 @@ const PlanProduccion = () => {
   const [focusTrapActive, setFocusTrapActive] = useState(false);
   const lastFocusedElement = useRef(null);
 
-// Función para anunciar cambios a lectores de pantalla
-const announceToScreenReader = (message, priority = 'polite') => {
-  const announcement = {
-    id: Date.now(),
-    message,
-    priority
-  };
-  setAnnouncements(prev => [...prev, announcement]);
+  // Función para anunciar cambios a lectores de pantalla
+  const announceToScreenReader = (message, priority = 'polite') => {
+    const announcement = {
+      id: Date.now(),
+      message,
+      priority
+    };
+    setAnnouncements(prev => [...prev, announcement]);
 
-  // Remover anuncio después de 5 segundos
-  setTimeout(() => {
-    setAnnouncements(prev => prev.filter(a => a.id !== announcement.id));
-  }, 5000);
-};
-};
-// Función para manejar foco en modales
-const handleModalFocus = (modalRef, isOpen) => {
-  if (isOpen) {
-    lastFocusedElement.current = document.activeElement;
-    setFocusTrapActive(true);
+    // Remover anuncio después de 5 segundos
     setTimeout(() => {
-      const focusableElements = modalRef.current?.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      if (focusableElements?.length > 0) {
-        focusableElements[0].focus();
-      }
-    }, 100);
-  } else {
-    setFocusTrapActive(false);
-    if (lastFocusedElement.current) {
-      lastFocusedElement.current.focus();
-    }
-  }
-};
+      setAnnouncements(prev => prev.filter(a => a.id !== announcement.id));
+    }, 5000);
+  };
 
-// Escuchar cambios de OEE desde Configuración y otros componentes
-useEffect(() => {
-  fetchData();
-
-  const handleOeeUpdate = (event) => {
-    console.log('🔄 Detectado cambio de OEE desde Configuración. Recargando datos...');
-    if (event.detail && event.detail.oeeValues) {
-      setOeeMaquinas(event.detail.oeeValues);
-      announceToScreenReader('Valores de OEE actualizados desde configuración');
+  // Función para manejar foco en modales
+  const handleModalFocus = (modalRef, isOpen) => {
+    if (isOpen) {
+      lastFocusedElement.current = document.activeElement;
+      setFocusTrapActive(true);
+      setTimeout(() => {
+        const focusableElements = modalRef.current?.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements?.length > 0) {
+          focusableElements[0].focus();
+        }
+      }, 100);
     } else {
-      fetchData();
+      setFocusTrapActive(false);
+      if (lastFocusedElement.current) {
+        lastFocusedElement.current.focus();
+      }
     }
   };
 
-  const handlePlanUpdated = () => {
-    console.log('🔄 Detectada actualización del plan desde otro componente. Recargando datos...');
+  // Escuchar cambios de OEE desde Configuración y otros componentes
+  useEffect(() => {
     fetchData();
-    announceToScreenReader('Plan de producción actualizado desde otro componente');
-  };
-  const handleDatosActualizados = () => {
-    console.log('🔄 Detectados nuevos datos importados. Recalculando plan inteligente...');
-    fetchData();
-    announceToScreenReader('Nuevos datos importados, recalculando plan de producción');
-  };
 
-  window.addEventListener('oeeUpdated', handleOeeUpdate);
-  window.addEventListener('planUpdated', handlePlanUpdated);
-  window.addEventListener('datosActualizados', handleDatosActualizados);
+    const handleOeeUpdate = (event) => {
+      console.log('🔄 Detectado cambio de OEE desde Configuración. Recargando datos...');
+      if (event.detail && event.detail.oeeValues) {
+        setOeeMaquinas(event.detail.oeeValues);
+        announceToScreenReader('Valores de OEE actualizados desde configuración');
+      } else {
+        fetchData();
+      }
+    };
 
-  return () => {
-    window.removeEventListener('oeeUpdated', handleOeeUpdate);
-    window.removeEventListener('planUpdated', handlePlanUpdated);
-    window.removeEventListener('datosActualizados', handleDatosActualizados);
-  };
+    const handlePlanUpdated = () => {
+      console.log('🔄 Detectada actualización del plan desde otro componente. Recargando datos...');
+      fetchData();
+      announceToScreenReader('Plan de producción actualizado desde otro componente');
+    };
+    const handleDatosActualizados = () => {
+      console.log('🔄 Detectados nuevos datos importados. Recalculando plan inteligente...');
+      fetchData();
+      announceToScreenReader('Nuevos datos importados, recalculando plan de producción');
+    };
+
+    window.addEventListener('oeeUpdated', handleOeeUpdate);
+    window.addEventListener('planUpdated', handlePlanUpdated);
+    window.addEventListener('datosActualizados', handleDatosActualizados);
+
+    return () => {
+      window.removeEventListener('oeeUpdated', handleOeeUpdate);
+      window.removeEventListener('planUpdated', handlePlanUpdated);
+      window.removeEventListener('datosActualizados', handleDatosActualizados);
+    };
 }, []);
 
 // Manejar foco en modales para accesibilidad
@@ -1438,11 +1439,8 @@ return (
               <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('tiempo_estimado_min')} title="Tiempo estimado de producción en minutos">
                 Tiempo (min) {orden.campo === 'tiempo_estimado_min' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
               </th>
-              <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden lg:table-cell" onClick={() => handleSort('prioridad')} title="Prioridad de producción">
+              <th className="py-3 px-3 text-left font-medium text-secondary whitespace-nowrap hidden lg:table-cell" onClick={() => handleSort('prioridad')} title="Prioridad de producción">
                 Prioridad {orden.campo === 'prioridad' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
-              </th>
-              <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('estado')} title="Estado actual del pedido">
-                Estado {orden.campo === 'estado' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
               </th>
               <th className="py-3 px-3 text-left font-medium text-secondary whitespace-nowrap">Acciones</th>
             </tr>
@@ -2896,4 +2894,5 @@ return (
   </div>
 </div>
 )
+};
 export default PlanProduccion;
