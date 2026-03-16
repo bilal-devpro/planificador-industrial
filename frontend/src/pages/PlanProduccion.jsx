@@ -2303,6 +2303,8 @@ return (
                           if (btn && btn.classList) {
                             btn.classList.add('animate-pulse');
                             setTimeout(() => btn.classList.remove('animate-pulse'), 500);
+                          } else {
+                            console.warn('Button with title "Recalcular con OEE y horario 24/7" not found.');
                           }
                         }
                       } else {
