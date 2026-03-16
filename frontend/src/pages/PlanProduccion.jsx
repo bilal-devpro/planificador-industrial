@@ -802,25 +802,36 @@ const PlanProduccion = () => {
   );
 
   return (
-    <div className="space-y-6 max-w-[1920px] mx-auto px-4">
+    <div className="space-y-6 max-w-[1920px] mx-auto px-4" lang="es">
+      {/* Skip Links for Accessibility */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50">
+        Saltar al contenido principal
+      </a>
+      <a href="#navigation" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-20 bg-blue-600 text-white px-4 py-2 rounded z-50">
+        Saltar a navegación
+      </a>
+      <a href="#filters" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-40 bg-blue-600 text-white px-4 py-2 rounded z-50">
+        Saltar a filtros
+      </a>
+
       {/* Header Mejorado con Información Clara del Horario */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <header id="navigation" className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-            <Factory size={32} className="text-purple-400" />
+            <Factory size={32} className="text-purple-400" aria-hidden="true" />
             <span className="hidden md:inline">Plan de Producción Inteligente</span>
           </h1>
-          <div className="mt-2 flex flex-wrap gap-3 items-center bg-bg-secondary/50 rounded-lg p-3">
+          <div className="mt-2 flex flex-wrap gap-3 items-center bg-bg-secondary/50 rounded-lg p-3" role="status" aria-live="polite">
             <div className="flex items-center gap-2 bg-green-900/30 text-green-400 px-3 py-1.5 rounded">
-              <Zap size={18} />
+              <Zap size={18} aria-hidden="true" />
               <span className="font-medium">Operación: 24/7</span>
             </div>
             <div className="flex items-center gap-2 bg-red-900/30 text-red-400 px-3 py-1.5 rounded">
-              <Clock size={18} />
+              <Clock size={18} aria-hidden="true" />
               <span className="font-medium">Parada semanal: Sábado 14:00 → Domingo 20:00</span>
             </div>
             <div className="flex items-center gap-2 bg-blue-900/30 text-blue-400 px-3 py-1.5 rounded">
-              <Hash size={18} />
+              <Hash size={18} aria-hidden="true" />
               <span className="font-medium">30 horas de cierre semanal</span>
             </div>
           </div>
@@ -835,22 +846,25 @@ const PlanProduccion = () => {
             onClick={() => fetchData(true)}
             className="btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm"
             title="Recargar datos frescos de ALUPAK/Inventario (los cambios no guardados se perderán)"
+            aria-label="Actualizar datos desde ALUPAK e Inventario"
           >
-            <RefreshCw size={16} />
+            <RefreshCw size={16} aria-hidden="true" />
             Actualizar Datos
           </button>
           <button
             onClick={() => setShowModal(true)}
             className="btn btn-primary flex items-center gap-2 px-3 py-2 text-sm"
+            aria-label="Crear nueva orden de producción"
           >
-            <Plus size={16} />
+            <Plus size={16} aria-hidden="true" />
             Nueva Orden
           </button>
           <button
             onClick={() => setShowHistoryModal(true)}
             className="btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm bg-blue-900/20 hover:bg-blue-900/30"
+            aria-label="Ver historial de cambios"
           >
-            <History size={16} />
+            <History size={16} aria-hidden="true" />
             Historial ({historialCambios.length})
           </button>
           <div className="flex gap-2">
@@ -860,8 +874,9 @@ const PlanProduccion = () => {
               className={`btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm ${indiceHistorial <= 0 ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               title={indiceHistorial <= 0 ? 'No hay cambios anteriores' : 'Deshacer último cambio'}
+              aria-label={indiceHistorial <= 0 ? 'No hay cambios para deshacer' : 'Deshacer último cambio'}
             >
-              <Undo size={16} />
+              <Undo size={16} aria-hidden="true" />
               <span className="hidden sm:inline">Deshacer</span>
             </button>
             <button
@@ -870,23 +885,24 @@ const PlanProduccion = () => {
               className={`btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm ${indiceHistorial >= historialCambios.length - 1 ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               title={indiceHistorial >= historialCambios.length - 1 ? 'No hay cambios posteriores' : 'Rehacer último cambio'}
+              aria-label={indiceHistorial >= historialCambios.length - 1 ? 'No hay cambios para rehacer' : 'Rehacer último cambio'}
             >
-              <Redo size={16} />
+              <Redo size={16} aria-hidden="true" />
               <span className="hidden sm:inline">Rehacer</span>
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Panel de Configuración Rápida de OEE - ¡AHORA SIN SLIDERS! */}
-      <div className="card bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-800/50">
+      <section className="card bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-800/50" aria-labelledby="oee-config-title">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4">
           <div className="flex items-center gap-3">
             <div className="bg-blue-500/20 p-2.5 rounded-lg">
-              <Settings size={20} className="text-blue-400" />
+              <Settings size={20} className="text-blue-400" aria-hidden="true" />
             </div>
             <div>
-              <div className="font-bold flex items-center gap-2 text-base">
+              <div className="font-bold flex items-center gap-2 text-base" id="oee-config-title">
                 <span>OEE por Máquina (Configuración en Tiempo Real)</span>
               </div>
               <div className="text-sm text-secondary mt-1 flex flex-wrap items-center gap-4">
@@ -903,7 +919,9 @@ const PlanProduccion = () => {
                       </span>
                       <div className="flex items-center gap-1">
                         {/* ✅ INPUT NUMÉRICO SIN SLIDERS - SIN ALERTAS MOLESTAS */}
+                        <label htmlFor={`oee-${maquina}`} className="sr-only">OEE para máquina {maquina}</label>
                         <input
+                          id={`oee-${maquina}`}
                           type="number"
                           min="0.5"
                           max="1.0"
@@ -912,8 +930,9 @@ const PlanProduccion = () => {
                           onChange={(e) => handleOeeChange(maquina, e.target.value)}
                           className="w-16 h-7 bg-gray-800 border border-gray-700 rounded text-center text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                           title={`OEE de ${maquina} (entre 0.5 y 1.0)`}
+                          aria-describedby={`oee-${maquina}-desc`}
                         />
-                        <span className="text-xs opacity-75">({porcentaje}%)</span>
+                        <span id={`oee-${maquina}-desc`} className="text-xs opacity-75">({porcentaje}%)</span>
                       </div>
                     </div>
                   );
@@ -922,21 +941,21 @@ const PlanProduccion = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm bg-blue-900/30 px-3 py-1.5 rounded-lg">
-            <Calculator size={16} className="text-yellow-400" />
+            <Calculator size={16} className="text-yellow-400" aria-hidden="true" />
             <span className="font-medium text-yellow-400">
               Cálculos con OEE específico + Horario 24/7 (Cierre Sáb 14:00 - Dom 20:00)
             </span>
             {guardandoOee && (
-              <div className="loading ml-2" style={{ width: '16px', height: '16px' }}></div>
+              <div className="loading ml-2" style={{ width: '16px', height: '16px' }} aria-label="Guardando cambios de OEE"></div>
             )}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Alertas */}
       {pedidosSinPlan.length > 0 && (
-        <div className="alert alert-warning">
-          <AlertTriangle size={20} />
+        <section className="alert alert-warning" role="alert" aria-live="assertive">
+          <AlertTriangle size={20} aria-hidden="true" />
           <div>
             <strong>⚠️ {pedidosSinPlan.length} pedidos sin planificación</strong>
             <p className="text-sm mt-1">
@@ -944,41 +963,55 @@ const PlanProduccion = () => {
               El sistema ha calculado automáticamente la cantidad a producir considerando el stock disponible para cada producto.
             </p>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Filtros y Ordenación Mejorados */}
-      <div className="card">
+      <main id="main-content" className="card">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-          <div className="flex flex-wrap gap-2 border-b border-border-color">
+          <nav id="filters" className="flex flex-wrap gap-2 border-b border-border-color" role="tablist" aria-label="Pestañas de planificación">
             <button
               className={`px-4 py-2 font-medium text-sm ${activeTab === 'planificacion' ? 'text-accent-purple border-b-2 border-accent-purple' : 'text-secondary'}`}
               onClick={() => setActiveTab('planificacion')}
+              role="tab"
+              aria-selected={activeTab === 'planificacion'}
+              aria-controls="tab-panel-planificacion"
+              id="tab-planificacion"
             >
-              <Factory size={16} className="inline mr-1" />
+              <Factory size={16} className="inline mr-1" aria-hidden="true" />
               Planificación Inteligente
             </button>
             <button
               className={`px-4 py-2 font-medium text-sm ${activeTab === 'maquinas' ? 'text-accent-purple border-b-2 border-accent-purple' : 'text-secondary'}`}
               onClick={() => setActiveTab('maquinas')}
+              role="tab"
+              aria-selected={activeTab === 'maquinas'}
+              aria-controls="tab-panel-maquinas"
+              id="tab-maquinas"
             >
-              <Cpu size={16} className="inline mr-1" />
+              <Cpu size={16} className="inline mr-1" aria-hidden="true" />
               Utilización de Máquinas (24/7)
             </button>
             <button
               className={`px-4 py-2 font-medium text-sm ${activeTab === 'historial' ? 'text-accent-purple border-b-2 border-accent-purple' : 'text-secondary'}`}
               onClick={() => setActiveTab('historial')}
+              role="tab"
+              aria-selected={activeTab === 'historial'}
+              aria-controls="tab-panel-historial"
+              id="tab-historial"
             >
-              <History size={16} className="inline mr-1" />
+              <History size={16} className="inline mr-1" aria-hidden="true" />
               Historial de Cambios
             </button>
-          </div>
+          </nav>
 
           {/* Filtros Mejorados */}
           <div className="flex flex-wrap gap-3 w-full md:w-auto">
             <div className="relative flex-1 min-w-[200px] md:min-w-[240px]">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary" size={16} />
+              <label htmlFor="search-input" className="sr-only">Buscar producto, cliente</label>
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary" aria-hidden="true" />
               <input
+                id="search-input"
                 type="text"
                 placeholder="Buscar producto, cliente..."
                 className="form-control pl-9 w-full text-sm py-1.5"
@@ -987,7 +1020,9 @@ const PlanProduccion = () => {
               />
             </div>
 
+            <label htmlFor="estado-select" className="sr-only">Filtrar por estado</label>
             <select
+              id="estado-select"
               className="form-control w-auto text-sm py-1.5 min-w-[140px]"
               value={filtros.estado}
               onChange={(e) => handleFilterChange('estado', e.target.value)}
@@ -998,7 +1033,9 @@ const PlanProduccion = () => {
               <option value="stock_suficiente">Stock Suficiente</option>
             </select>
 
+            <label htmlFor="generacion-select" className="sr-only">Filtrar por generación</label>
             <select
+              id="generacion-select"
               className="form-control w-auto text-sm py-1.5 min-w-[140px]"
               value={filtros.generacion}
               onChange={(e) => handleFilterChange('generacion', e.target.value)}
@@ -1008,7 +1045,9 @@ const PlanProduccion = () => {
               <option value="G2">G2 (AC)</option>
             </select>
 
+            <label htmlFor="maquina-select" className="sr-only">Filtrar por máquina</label>
             <select
+              id="maquina-select"
               className="form-control w-auto text-sm py-1.5 min-w-[120px]"
               value={filtros.maquina}
               onChange={(e) => handleFilterChange('maquina', e.target.value)}
@@ -1023,8 +1062,9 @@ const PlanProduccion = () => {
             <button
               className="btn btn-secondary btn-sm flex items-center gap-1 px-3 py-1.5"
               onClick={() => setFiltros({ estado: '', generacion: '', maquina: '', prioridad: '', search: '' })}
+              aria-label="Limpiar todos los filtros"
             >
-              <FilterX size={14} />
+              <FilterX size={14} aria-hidden="true" />
               Limpiar
             </button>
           </div>
@@ -1032,51 +1072,51 @@ const PlanProduccion = () => {
 
         {/* Vista de Planificación */}
         {activeTab === 'planificacion' && (
-          <div className="overflow-x-auto -mx-4 px-4">
+          <div id="tab-panel-planificacion" role="tabpanel" aria-labelledby="tab-planificacion" className="overflow-x-auto -mx-4 px-4">
             <div className="min-w-[1400px]">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm" role="table" aria-label="Tabla de planificación de producción">
                 <thead>
                   <tr className="bg-bg-secondary/50">
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('no_sales_line')}>
-                      Producto {orden.campo === 'no_sales_line' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('no_sales_line')} scope="col" aria-sort={orden.campo === 'no_sales_line' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Producto {orden.campo === 'no_sales_line' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden md:table-cell" onClick={() => handleSort('customer_name')}>
-                      Cliente {orden.campo === 'customer_name' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden md:table-cell" onClick={() => handleSort('customer_name')} scope="col" aria-sort={orden.campo === 'customer_name' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Cliente {orden.campo === 'customer_name' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('generacion')}>
-                      Generación {orden.campo === 'generacion' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('generacion')} scope="col" aria-sort={orden.campo === 'generacion' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Generación {orden.campo === 'generacion' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_pendiente')}>
-                      Pendiente {orden.campo === 'cantidad_pendiente' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_pendiente')} scope="col" aria-sort={orden.campo === 'cantidad_pendiente' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Pendiente {orden.campo === 'cantidad_pendiente' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap hidden sm:table-cell" onClick={() => handleSort('stock_disponible_ajustado')}>
-                      Stock Disp. {orden.campo === 'stock_disponible_ajustado' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap hidden sm:table-cell" onClick={() => handleSort('stock_disponible_ajustado')} scope="col" aria-sort={orden.campo === 'stock_disponible_ajustado' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Stock Disp. {orden.campo === 'stock_disponible_ajustado' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_a_producir')}>
-                      A Producir {orden.campo === 'cantidad_a_producir' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_a_producir')} scope="col" aria-sort={orden.campo === 'cantidad_a_producir' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      A Producir {orden.campo === 'cantidad_a_producir' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_planificada')}>
-                      Planificado {orden.campo === 'cantidad_planificada' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_planificada')} scope="col" aria-sort={orden.campo === 'cantidad_planificada' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Planificado {orden.campo === 'cantidad_planificada' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('fecha_inicio')}>
-                      Fecha Inicio {orden.campo === 'fecha_inicio' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('fecha_inicio')} scope="col" aria-sort={orden.campo === 'fecha_inicio' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Fecha Inicio {orden.campo === 'fecha_inicio' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('fecha_fin')}>
-                      Fecha Fin {orden.campo === 'fecha_fin' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('fecha_fin')} scope="col" aria-sort={orden.campo === 'fecha_fin' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Fecha Fin {orden.campo === 'fecha_fin' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('maquina_asignada')}>
-                      Máquina {orden.campo === 'maquina_asignada' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('maquina_asignada')} scope="col" aria-sort={orden.campo === 'maquina_asignada' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Máquina {orden.campo === 'maquina_asignada' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('tiempo_estimado_min')}>
-                      Tiempo Est. {orden.campo === 'tiempo_estimado_min' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('tiempo_estimado_min')} scope="col" aria-sort={orden.campo === 'tiempo_estimado_min' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Tiempo Est. {orden.campo === 'tiempo_estimado_min' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden lg:table-cell" onClick={() => handleSort('prioridad')}>
-                      Prioridad {orden.campo === 'prioridad' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden lg:table-cell" onClick={() => handleSort('prioridad')} scope="col" aria-sort={orden.campo === 'prioridad' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Prioridad {orden.campo === 'prioridad' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('estado')}>
-                      Estado {orden.campo === 'estado' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" /> : <SortDesc size={12} className="inline ml-1" />)}
+                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('estado')} scope="col" aria-sort={orden.campo === 'estado' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      Estado {orden.campo === 'estado' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary whitespace-nowrap">Acciones</th>
+                    <th className="py-3 px-3 text-left font-medium text-secondary whitespace-nowrap" scope="col">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1318,12 +1358,12 @@ const PlanProduccion = () => {
 
         {/* Vista de Historial de Cambios */}
         {activeTab === 'historial' && (
-          <div className="space-y-6">
+          <div id="tab-panel-historial" role="tabpanel" aria-labelledby="tab-historial" className="space-y-6">
             <div className="bg-bg-secondary rounded-lg p-4">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
                   <h3 className="font-bold text-lg flex items-center gap-2">
-                    <History size={24} className="text-blue-400" />
+                    <History size={24} className="text-blue-400" aria-hidden="true" />
                     Historial de Cambios del Plan de Producción
                   </h3>
                   <p className="text-sm text-secondary mt-1">
@@ -1336,8 +1376,9 @@ const PlanProduccion = () => {
                     disabled={indiceHistorial <= 0}
                     className={`btn flex items-center gap-2 ${indiceHistorial <= 0 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
                       }`}
+                    aria-label={indiceHistorial <= 0 ? 'No hay cambios para deshacer' : 'Deshacer último cambio'}
                   >
-                    <Undo size={18} />
+                    <Undo size={18} aria-hidden="true" />
                     Deshacer ({indiceHistorial})
                   </button>
                   <button
@@ -1345,8 +1386,9 @@ const PlanProduccion = () => {
                     disabled={indiceHistorial >= historialCambios.length - 1}
                     className={`btn flex items-center gap-2 ${indiceHistorial >= historialCambios.length - 1 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
                       }`}
+                    aria-label={indiceHistorial >= historialCambios.length - 1 ? 'No hay cambios para rehacer' : 'Rehacer último cambio'}
                   >
-                    <Redo size={18} />
+                    <Redo size={18} aria-hidden="true" />
                     Rehacer ({historialCambios.length - indiceHistorial - 1})
                   </button>
                   <button
@@ -1364,8 +1406,9 @@ const PlanProduccion = () => {
                       }
                     }}
                     className="btn btn-secondary flex items-center gap-2"
+                    aria-label="Limpiar todo el historial de cambios"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={18} aria-hidden="true" />
                     Limpiar Historial
                   </button>
                 </div>
@@ -1518,9 +1561,9 @@ const PlanProduccion = () => {
 
         {/* Vista de Utilización de Máquinas */}
         {activeTab === 'maquinas' && (
-          <div className="bg-bg-secondary rounded-lg p-4">
+          <div id="tab-panel-maquinas" role="tabpanel" aria-labelledby="tab-maquinas" className="bg-bg-secondary rounded-lg p-4">
             <h3 className="font-bold mb-4 flex items-center gap-2">
-              <Cpu size={20} className="text-purple-400" />
+              <Cpu size={20} className="text-purple-400" aria-hidden="true" />
               Utilización de Máquinas con OEE Individual (Horario: 24/7)
             </h3>
             <div className="text-center py-8 text-secondary">
@@ -1528,16 +1571,16 @@ const PlanProduccion = () => {
             </div>
           </div>
         )}
-      </div>
+      </main>
 
       {/* ✅ MODAL FUNCIONAL PARA NUEVA ORDEN - TOTALMENTE MEJORADO */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-title">
           <div className="bg-bg-primary rounded-lg p-6 w-full max-w-3xl max-h-[95vh] overflow-y-auto relative">
             {/* Header del Modal */}
             <div className="flex justify-between items-start mb-6 pb-4 border-b border-border-color">
-              <h3 className="font-bold text-xl flex items-center gap-3 text-accent-purple">
-                <Plus size={24} className="text-blue-400" />
+              <h3 id="modal-title" className="font-bold text-xl flex items-center gap-3 text-accent-purple">
+                <Plus size={24} className="text-blue-400" aria-hidden="true" />
                 Nueva Orden de Producción Manual
               </h3>
               <button
@@ -1545,21 +1588,21 @@ const PlanProduccion = () => {
                 className="text-secondary hover:text-text-primary p-2 hover:bg-bg-secondary rounded-full transition"
                 aria-label="Cerrar modal"
               >
-                <X size={24} />
+                <X size={24} aria-hidden="true" />
               </button>
             </div>
 
             <div className="space-y-6">
               {/* Paso 1: Selección de Pedido */}
               <div className="space-y-2">
-                <label className="form-label flex items-center gap-2">
-                  <Package size={18} className="text-purple-400" />
+                <label className="form-label flex items-center gap-2" htmlFor="pedido-select">
+                  <Package size={18} className="text-purple-400" aria-hidden="true" />
                   Pedido ALUPAK <span className="text-red-400">*</span>
                 </label>
 
                 {pedidosSinPlan.length === 0 ? (
-                  <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4 text-center">
-                    <AlertTriangle size={24} className="mx-auto text-yellow-400 mb-2" />
+                  <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4 text-center" role="alert">
+                    <AlertTriangle size={24} className="mx-auto text-yellow-400 mb-2" aria-hidden="true" />
                     <p className="font-medium text-yellow-300">No hay pedidos pendientes sin planificar</p>
                     <p className="text-sm mt-1">
                       Todos los pedidos ya tienen una orden de producción asignada.
@@ -1569,6 +1612,7 @@ const PlanProduccion = () => {
                 ) : (
                   <div className="relative">
                     <select
+                      id="pedido-select"
                       className="form-control pr-10"
                       value={nuevoPlan.alupak_pedido_id}
                       onChange={(e) => {
@@ -1622,6 +1666,7 @@ const PlanProduccion = () => {
                         }
                       }}
                       required
+                      aria-describedby="pedido-help"
                     >
                       <option value="">-- Seleccionar pedido pendiente --</option>
                       {pedidosSinPlan.map(pedido => {
@@ -1644,8 +1689,9 @@ const PlanProduccion = () => {
                       })}
                     </select>
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-secondary">
-                      <ChevronDown size={18} />
+                      <ChevronDown size={18} aria-hidden="true" />
                     </div>
+                    <div id="pedido-help" className="sr-only">Selecciona un pedido de ALUPAK para crear una orden de producción</div>
                   </div>
                 )}
 
@@ -1681,12 +1727,13 @@ const PlanProduccion = () => {
                 {/* Columna Izquierda */}
                 <div className="space-y-4">
                   <div>
-                    <label className="form-label flex items-center gap-2">
-                      <HardHat size={18} className="text-yellow-400" />
+                    <label className="form-label flex items-center gap-2" htmlFor="cantidad-producir">
+                      <HardHat size={18} className="text-yellow-400" aria-hidden="true" />
                       Cantidad a Producir <span className="text-red-400">*</span>
                     </label>
                     <div className="relative">
                       <input
+                        id="cantidad-producir"
                         type="number"
                         className="form-control pl-10"
                         value={nuevoPlan.cantidad_planificada}
@@ -1716,10 +1763,12 @@ const PlanProduccion = () => {
                         min="1"
                         placeholder="Ej: 50000"
                         required
+                        aria-describedby="cantidad-help"
                       />
                       <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-yellow-400">
-                        <Scale size={18} />
+                        <Scale size={18} aria-hidden="true" />
                       </div>
+                      <div id="cantidad-help" className="sr-only">Ingresa la cantidad de unidades a producir</div>
                     </div>
                     {nuevoPlan.alupak_pedido_id && (
                       <p className="text-xs text-secondary mt-1">
@@ -1734,12 +1783,13 @@ const PlanProduccion = () => {
                   </div>
 
                   <div>
-                    <label className="form-label flex items-center gap-2">
-                      <Cpu size={18} className="text-blue-400" />
+                    <label className="form-label flex items-center gap-2" htmlFor="maquina-select">
+                      <Cpu size={18} className="text-blue-400" aria-hidden="true" />
                       Máquina Asignada <span className="text-red-400">*</span>
                     </label>
                     <div className="relative">
                       <select
+                        id="maquina-select"
                         className="form-control pr-10"
                         value={nuevoPlan.maquina_asignada}
                         onChange={(e) => {
@@ -1767,6 +1817,7 @@ const PlanProduccion = () => {
                         }}
                         required
                         disabled={!nuevoPlan.alupak_pedido_id}
+                        aria-describedby="maquina-help"
                       >
                         <option value="">-- Seleccionar máquina --</option>
                         {nuevoPlan.alupak_pedido_id && (() => {
@@ -1791,8 +1842,9 @@ const PlanProduccion = () => {
                         })()}
                       </select>
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-secondary">
-                        <ChevronDown size={18} />
+                        <ChevronDown size={18} aria-hidden="true" />
                       </div>
+                      <div id="maquina-help" className="sr-only">Selecciona la máquina que se utilizará para la producción</div>
                     </div>
 
                     {nuevoPlan.alupak_pedido_id && (
@@ -1819,12 +1871,13 @@ const PlanProduccion = () => {
                 {/* Columna Derecha */}
                 <div className="space-y-4">
                   <div>
-                    <label className="form-label flex items-center gap-2">
-                      <Calendar size={18} className="text-green-400" />
+                    <label className="form-label flex items-center gap-2" htmlFor="fecha-inicio">
+                      <Calendar size={18} className="text-green-400" aria-hidden="true" />
                       Fecha de Inicio <span className="text-red-400">*</span>
                     </label>
                     <div className="relative">
                       <input
+                        id="fecha-inicio"
                         type="date"
                         className="form-control"
                         value={nuevoPlan.fecha_inicio}
@@ -1852,7 +1905,9 @@ const PlanProduccion = () => {
                           }
                         }}
                         required
+                        aria-describedby="fecha-inicio-help"
                       />
+                      <div id="fecha-inicio-help" className="sr-only">Selecciona la fecha de inicio de la producción</div>
                     </div>
                     <p className="text-xs text-secondary mt-1">
                       Horario operativo: 24/7 (excepto cierre Sáb 14:00 - Dom 20:00)
@@ -1860,17 +1915,19 @@ const PlanProduccion = () => {
                   </div>
 
                   <div>
-                    <label className="form-label flex items-center gap-2">
-                      <Clock size={18} className="text-purple-400" />
+                    <label className="form-label flex items-center gap-2" htmlFor="fecha-fin">
+                      <Clock size={18} className="text-purple-400" aria-hidden="true" />
                       Fecha de Fin Estimada
                     </label>
                     <div className="flex gap-2">
                       <input
+                        id="fecha-fin"
                         type="date"
                         className="form-control flex-1"
                         value={nuevoPlan.fecha_fin}
                         onChange={(e) => setNuevoPlan(prev => ({ ...prev, fecha_fin: e.target.value }))}
                         readOnly
+                        aria-describedby="fecha-fin-help"
                       />
                       <button
                         onClick={() => {
@@ -1904,10 +1961,13 @@ const PlanProduccion = () => {
                         className="btn btn-secondary p-2.5"
                         title="Recalcular con OEE y horario 24/7"
                         type="button"
+                        aria-label="Recalcular fecha de fin con OEE y horario 24/7"
+                        disabled={calculando || !nuevoPlan.fecha_inicio || !nuevoPlan.cantidad_planificada}
                       >
-                        <Calculator size={18} />
+                        <Calculator size={18} aria-hidden="true" />
                       </button>
                     </div>
+                    <div id="fecha-fin-help" className="sr-only">Fecha de fin calculada automáticamente basada en la producción</div>
                     {nuevoPlan.fecha_fin && nuevoPlan.fecha_inicio && (
                       <div className="mt-2 p-2 bg-purple-900/20 rounded text-xs text-center">
                         <div className="font-medium text-purple-300">
@@ -1967,18 +2027,20 @@ const PlanProduccion = () => {
 
               {/* Paso 4: Observaciones */}
               <div className="pt-4 border-t border-border-color">
-                <label className="form-label flex items-center gap-2">
-                  <FileSpreadsheet size={18} className="text-blue-400" />
+                <label className="form-label flex items-center gap-2" htmlFor="observaciones">
+                  <FileSpreadsheet size={18} className="text-blue-400" aria-hidden="true" />
                   Observaciones
                 </label>
                 <textarea
+                  id="observaciones"
                   className="form-control min-h-[100px]"
                   value={nuevoPlan.observaciones}
                   onChange={(e) => setNuevoPlan(prev => ({ ...prev, observaciones: e.target.value }))}
                   placeholder="Notas adicionales para esta orden de producción... (ej: lote especial, cliente prioritario, etc.)"
                   maxLength="500"
+                  aria-describedby="observaciones-help"
                 />
-                <div className="text-right text-xs text-secondary mt-1">
+                <div id="observaciones-help" className="text-right text-xs text-secondary mt-1">
                   {nuevoPlan.observaciones.length}/500 caracteres
                 </div>
               </div>
@@ -2185,18 +2247,19 @@ const PlanProduccion = () => {
 
       {/* ✅ MODAL DE HISTORIAL COMPLETO */}
       {showHistoryModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="history-modal-title">
           <div className="bg-bg-primary rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-xl flex items-center gap-2">
-                <History size={24} className="text-blue-400" />
+              <h3 id="history-modal-title" className="font-bold text-xl flex items-center gap-2">
+                <History size={24} className="text-blue-400" aria-hidden="true" />
                 Historial Completo de Cambios
               </h3>
               <button
                 onClick={() => setShowHistoryModal(false)}
                 className="text-secondary hover:text-text-primary"
+                aria-label="Cerrar modal de historial"
               >
-                <X size={24} />
+                <X size={24} aria-hidden="true" />
               </button>
             </div>
 
@@ -2414,49 +2477,49 @@ const PlanProduccion = () => {
       )}
 
       {/* Información para Planning - Actualizada con Horario 24/7 */}
-      <div className="card bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-800/50 mt-6">
+      <section className="card bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-800/50 mt-6" aria-labelledby="info-title">
         <div className="flex items-start gap-4 p-4">
           <div className="bg-purple-500/20 p-3 rounded-lg">
-            <Factory size={28} className="text-purple-400" />
+            <Factory size={28} className="text-purple-400" aria-hidden="true" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
-              <Factory size={20} />
+            <h3 id="info-title" className="font-bold text-lg mb-2 flex items-center gap-2">
+              <Factory size={20} aria-hidden="true" />
               Sistema de Planificación Inteligente - Horario 24/7
             </h3>
             <ul className="space-y-2 text-sm">
               <li className="flex items-start gap-2">
-                <CheckCircle size={16} className="text-green-400 mt-0.5 flex-shrink-0" />
+                <CheckCircle size={16} className="text-green-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
                 <span>
                   <strong>Horario laboral real:</strong> Operación 24 horas los 7 días de la semana, excepto cierre desde sábado 14:00 hasta domingo 20:00 (30 horas de cierre semanal).
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <Zap size={16} className="text-yellow-400 mt-0.5 flex-shrink-0" />
+                <Zap size={16} className="text-yellow-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
                 <span>
                   <strong>Cálculos precisos:</strong> Los tiempos de producción se calculan automáticamente considerando el OEE específico de cada máquina, el rendimiento por producto y el horario 24/7 con saltos automáticos durante el cierre de fin de semana.
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <History size={16} className="text-blue-400 mt-0.5 flex-shrink-0" />
+                <History size={16} className="text-blue-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
                 <span>
                   <strong>Historial completo con undo/redo:</strong> Todos los cambios se guardan automáticamente con capacidad de deshacer/rehacer en cualquier momento. Navega libremente por todo el historial de modificaciones.
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <Database size={16} className="text-green-400 mt-0.5 flex-shrink-0" />
+                <Database size={16} className="text-green-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
                 <span>
                   <strong>Sincronización en tiempo real:</strong> Los cambios se guardan inmediatamente en la base de datos y se notifican a todos los componentes del sistema (Dashboard, Configuración, etc.) sin necesidad de recargar.
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <Settings size={16} className="text-blue-400 mt-0.5 flex-shrink-0" />
+                <Settings size={16} className="text-blue-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
                 <span>
                   <strong>OEE editable por máquina:</strong> Configuración de OEE por máquina directamente en esta pantalla con inputs numéricos precisos. Los cambios se guardan automáticamente y se aplican inmediatamente en todos los cálculos con horario 24/7.
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <Clock size={16} className="text-yellow-400 mt-0.5 flex-shrink-0" />
+                <Clock size={16} className="text-yellow-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
                 <span>
                   <strong>Capacidad semanal real:</strong> 8,280 minutos (138 horas) por semana (10,080 minutos totales - 1,800 minutos de cierre de fin de semana).
                 </span>
@@ -2464,7 +2527,7 @@ const PlanProduccion = () => {
             </ul>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
