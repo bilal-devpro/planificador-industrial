@@ -2299,6 +2299,7 @@ return (
                           setNuevoPlan(prev => ({ ...prev, fecha_fin: fechaFinCalculada }));
 
                           // Feedback visual
+                          console.log('Attempting to add class to button...');
                           setTimeout(() => {
                             const btn = document.querySelector('button[title="Recalcular con OEE y horario 24/7"]');
                             if (!btn) {
@@ -2311,8 +2312,12 @@ return (
                               return;
                             }
 
+                            console.log('Button found, adding class...');
                             btn.classList.add('animate-pulse');
-                            setTimeout(() => btn.classList.remove('animate-pulse'), 500);
+                            setTimeout(() => {
+                              console.log('Removing class from button...');
+                              btn.classList.remove('animate-pulse');
+                            }, 500);
                           }, 0);
                         }
                       } else {
