@@ -2301,11 +2301,15 @@ return (
                           // Feedback visual
                           setTimeout(() => {
                             const btn = document.querySelector('button[title="Recalcular con OEE y horario 24/7"]');
-                            if (btn && btn.classList) {
-                              btn.classList.add('animate-pulse');
-                              setTimeout(() => btn.classList.remove('animate-pulse'), 500);
+                            if (btn) {
+                              if (btn.classList) {
+                                btn.classList.add('animate-pulse');
+                                setTimeout(() => btn.classList.remove('animate-pulse'), 500);
+                              } else {
+                                console.error('Button found, but classList is not accessible.');
+                              }
                             } else {
-                              console.warn('Button with title "Recalcular con OEE y horario 24/7" not found or not rendered yet.');
+                              console.error('Button with title "Recalcular con OEE y horario 24/7" not found in the DOM.');
                             }
                           }, 0);
                         }
