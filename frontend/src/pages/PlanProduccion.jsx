@@ -157,6 +157,7 @@ const PlanProduccion = () => {
   const [activeTab, setActiveTab] = useState('planificacion');
   const [showModal, setShowModal] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState(null);
 
   // ✅ Estado inicializado con valores por defecto para evitar warnings
