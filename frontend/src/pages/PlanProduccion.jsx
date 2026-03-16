@@ -182,6 +182,10 @@ const PlanProduccion = () => {
   });
   const [orden, setOrden] = useState({ campo: 'fecha_inicio', direccion: 'asc' });
 
+  // Paginación: mostrar 20 registros por página
+  const [paginaActual, setPaginaActual] = useState(1);
+  const elementosPorPagina = 20;
+
   // ✅ OEE por máquina - editable con INPUT NUMÉRICO (sin sliders)
   const [oeeMaquinas, setOeeMaquinas] = useState({
     M1: 0.85,
@@ -287,6 +291,9 @@ const PlanProduccion = () => {
         const stockConsolidado = procesarStockConsolidado(stockData.stock);
         const planCalculado = crearPlanConCalculos(pedidosData.pedidos, stockConsolidado, nuevoOee);
         setPlanManual(planCalculado);
+        // Inicializar historial con el primer estado del plan
+        guardarEnHistorial(planCalculado, 'carga_inicial', { mensaje: 'Plan inicial cargado' });
+        setPaginaActual(1);
       } else {
         setPlanManual([]); // Si no hay datos, dejar vacío
       }
@@ -500,6 +507,8 @@ const PlanProduccion = () => {
   // Manejar filtros
   const handleFilterChange = (campo, valor) => {
     setFiltros(prev => ({ ...prev, [campo]: valor }));
+    // Reinciar paginación para que el usuario no quede en una página vacía
+    setPaginaActual(1);
   };
 
   // Manejar ordenación
@@ -508,6 +517,7 @@ const PlanProduccion = () => {
       campo: campo,
       direccion: prev.campo === campo ? (prev.direccion === 'asc' ? 'desc' : 'asc') : 'asc'
     }));
+    setPaginaActual(1);
   };
 
   // Ordenar y filtrar datos
@@ -557,11 +567,33 @@ const PlanProduccion = () => {
     return datos;
   }, [planManual, filtros, orden]);
 
+  // Paginación
+  const totalPaginas = Math.max(1, Math.ceil(datosFiltradosYOrdenados.length / elementosPorPagina));
+  const datosPaginados = useMemo(() => {
+    const inicio = (paginaActual - 1) * elementosPorPagina;
+    const fin = inicio + elementosPorPagina;
+    return datosFiltradosYOrdenados.slice(inicio, fin);
+  }, [datosFiltradosYOrdenados, paginaActual, elementosPorPagina]);
+
+  // Ajustar página si los filtros reducen la cantidad de páginas
+  useEffect(() => {
+    if (paginaActual > totalPaginas) {
+      setPaginaActual(totalPaginas);
+    }
+  }, [totalPaginas, paginaActual]);
+
   // Función para mostrar feedback temporal
   const showFeedback = (message, type = 'success', duration = 3000) => {
     setFeedbackMessage({ message, type });
     setTimeout(() => setFeedbackMessage(null), duration);
   };
+  const guardarCambios = () => {
+    // Se considera que los cambios ya están guardados localmente en planManual
+    setDatosOriginales(JSON.stringify(planManual));
+    showFeedback('Cambios guardados localmente', 'success');
+    window.dispatchEvent(new CustomEvent('planUpdated', { detail: { source: 'local' } }));
+  };
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Solo activar si no estamos en un input o textarea
@@ -574,7 +606,7 @@ const PlanProduccion = () => {
         case 'N':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            setShowNewOrderModal(true);
+            setShowModal(true);
           }
           break;
         case 'z':
@@ -618,7 +650,7 @@ const PlanProduccion = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [showNewOrderModal, showHistoryModal, editingOrder, deshacer, rehacer, guardarCambios]);
+  }, [showKeyboardHelp, showHistoryModal, showModal, deshacer, rehacer, guardarCambios]);
 
   // Calcular resumen del plan
   const calcularResumenPlan = () => {
@@ -662,7 +694,7 @@ const PlanProduccion = () => {
   const resumenPlan = calcularResumenPlan();
 
   // ✅ SISTEMA DE HISTORIAL CON UNDO/REDO
-  const guardarEnHistorial = (nuevoPlan, accion, detalles = {}) => {
+  function guardarEnHistorial(nuevoPlan, accion, detalles = {}) {
     const snapshot = JSON.parse(JSON.stringify(nuevoPlan));
     const nuevoHistorial = historialCambios.slice(0, indiceHistorial + 1);
 
@@ -678,7 +710,7 @@ const PlanProduccion = () => {
     setIndiceHistorial(nuevoHistorial.length - 1);
     setDatosOriginales(JSON.stringify(snapshot));
     console.log(`✅ Historial guardado: ${accion || 'desconocido'} (${nuevoHistorial.length} estados)`);
-  };
+  }
 
   const deshacer = () => {
     if (indiceHistorial > 0) {
@@ -686,7 +718,7 @@ const PlanProduccion = () => {
       const estadoAnterior = historialCambios[nuevoIndice].plan;
       setPlanManual(estadoAnterior);
       setIndiceHistorial(nuevoIndice);
-      window.dispatchEvent(new Event('planUpdated'));
+      window.dispatchEvent(new CustomEvent('planUpdated', { detail: { source: 'local' } }));
       showFeedback('Cambio deshecho', 'success');
       console.log(`↩️ Deshacer: Volviendo al estado ${nuevoIndice + 1}/${historialCambios.length}`);
     } else {
@@ -700,7 +732,7 @@ const PlanProduccion = () => {
       const estadoSiguiente = historialCambios[nuevoIndice].plan;
       setPlanManual(estadoSiguiente);
       setIndiceHistorial(nuevoIndice);
-      window.dispatchEvent(new Event('planUpdated'));
+      window.dispatchEvent(new CustomEvent('planUpdated', { detail: { source: 'local' } }));
       showFeedback('Cambio rehecho', 'success');
       console.log(`↪️ Rehacer: Avanzando al estado ${nuevoIndice + 1}/${historialCambios.length}`);
     } else {
@@ -1169,8 +1201,16 @@ const PlanProduccion = () => {
                         <p className="max-w-md mx-auto">El sistema calculará automáticamente las órdenes al importar los datos de ALUPAK</p>
                       </td>
                     </tr>
+                  ) : datosPaginados.length === 0 ? (
+                    <tr>
+                      <td colSpan="14" className="text-center py-12 text-secondary">
+                        <Factory size={48} className="mx-auto mb-4 text-gray-600" />
+                        <p className="text-lg font-medium mb-2">No hay resultados en esta página</p>
+                        <p className="max-w-md mx-auto">Cambia de página o ajusta los filtros para ver más resultados.</p>
+                      </td>
+                    </tr>
                   ) : (
-                    datosFiltradosYOrdenados.map((orden) => {
+                    datosPaginados.map((orden) => {
                       const cajasPendientes = orden.unidades_por_caja > 0
                         ? Math.ceil(orden.cantidad_pendiente / orden.unidades_por_caja)
                         : 0;
@@ -1375,6 +1415,56 @@ const PlanProduccion = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Paginación */}
+            <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="text-sm text-secondary">
+                {datosFiltradosYOrdenados.length > 0 ? (
+                  <>
+                    Mostrando <span className="font-semibold">{(paginaActual - 1) * elementosPorPagina + 1}</span> - <span className="font-semibold">{Math.min(paginaActual * elementosPorPagina, datosFiltradosYOrdenados.length)}</span> de <span className="font-semibold">{datosFiltradosYOrdenados.length}</span> resultados
+                  </>
+                ) : (
+                  'No hay resultados para mostrar'
+                )}
+              </div>
+              <div className="flex items-center gap-1 flex-wrap">
+                <button
+                  onClick={() => setPaginaActual(1)}
+                  disabled={paginaActual <= 1}
+                  className={`btn btn-sm ${paginaActual <= 1 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-outline'}`}
+                  aria-label="Ir a la primera página"
+                >
+                  «
+                </button>
+                <button
+                  onClick={() => setPaginaActual(prev => Math.max(1, prev - 1))}
+                  disabled={paginaActual <= 1}
+                  className={`btn btn-sm ${paginaActual <= 1 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-outline'}`}
+                  aria-label="Página anterior"
+                >
+                  ‹
+                </button>
+                <span className="text-sm px-2">
+                  Página <span className="font-semibold">{paginaActual}</span> / <span className="font-semibold">{totalPaginas}</span>
+                </span>
+                <button
+                  onClick={() => setPaginaActual(prev => Math.min(totalPaginas, prev + 1))}
+                  disabled={paginaActual >= totalPaginas}
+                  className={`btn btn-sm ${paginaActual >= totalPaginas ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-outline'}`}
+                  aria-label="Página siguiente"
+                >
+                  ›
+                </button>
+                <button
+                  onClick={() => setPaginaActual(totalPaginas)}
+                  disabled={paginaActual >= totalPaginas}
+                  className={`btn btn-sm ${paginaActual >= totalPaginas ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-outline'}`}
+                  aria-label="Ir a la última página"
+                >
+                  »
+                </button>
+              </div>
             </div>
 
             {/* Barra de Acciones Contextuales */}
