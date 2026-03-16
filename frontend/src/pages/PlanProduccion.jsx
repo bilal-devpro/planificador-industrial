@@ -804,13 +804,13 @@ const PlanProduccion = () => {
   return (
     <div className="space-y-6 max-w-[1920px] mx-auto px-4" lang="es">
       {/* Skip Links for Accessibility */}
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50 transition-all duration-200 hover:bg-blue-700 focus:ring-2 focus:ring-blue-300">
         Saltar al contenido principal
       </a>
-      <a href="#navigation" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-20 bg-blue-600 text-white px-4 py-2 rounded z-50">
+      <a href="#navigation" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-20 bg-blue-600 text-white px-4 py-2 rounded z-50 transition-all duration-200 hover:bg-blue-700 focus:ring-2 focus:ring-blue-300">
         Saltar a navegación
       </a>
-      <a href="#filters" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-40 bg-blue-600 text-white px-4 py-2 rounded z-50">
+      <a href="#filters" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-40 bg-blue-600 text-white px-4 py-2 rounded z-50 transition-all duration-200 hover:bg-blue-700 focus:ring-2 focus:ring-blue-300">
         Saltar a filtros
       </a>
 
@@ -844,7 +844,7 @@ const PlanProduccion = () => {
         <div className="flex flex-wrap gap-3 justify-end">
           <button
             onClick={() => fetchData(true)}
-            className="btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm"
+            className="btn btn-secondary flex items-center gap-2 px-4 py-2 text-sm min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none"
             title="Recargar datos frescos de ALUPAK/Inventario (los cambios no guardados se perderán)"
             aria-label="Actualizar datos desde ALUPAK e Inventario"
           >
@@ -853,7 +853,7 @@ const PlanProduccion = () => {
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="btn btn-primary flex items-center gap-2 px-3 py-2 text-sm"
+            className="btn btn-primary flex items-center gap-2 px-4 py-2 text-sm min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-purple-300 focus:outline-none"
             aria-label="Crear nueva orden de producción"
           >
             <Plus size={16} aria-hidden="true" />
@@ -861,7 +861,7 @@ const PlanProduccion = () => {
           </button>
           <button
             onClick={() => setShowHistoryModal(true)}
-            className="btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm bg-blue-900/20 hover:bg-blue-900/30"
+            className="btn btn-secondary flex items-center gap-2 px-4 py-2 text-sm min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none bg-blue-900/20 hover:bg-blue-900/30"
             aria-label="Ver historial de cambios"
           >
             <History size={16} aria-hidden="true" />
@@ -871,7 +871,7 @@ const PlanProduccion = () => {
             <button
               onClick={deshacer}
               disabled={indiceHistorial <= 0}
-              className={`btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm ${indiceHistorial <= 0 ? 'opacity-50 cursor-not-allowed' : ''
+              className={`btn flex items-center gap-2 px-3 py-2 text-sm min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none ${indiceHistorial <= 0 ? 'opacity-50 cursor-not-allowed' : 'btn-primary'
                 }`}
               title={indiceHistorial <= 0 ? 'No hay cambios anteriores' : 'Deshacer último cambio'}
               aria-label={indiceHistorial <= 0 ? 'No hay cambios para deshacer' : 'Deshacer último cambio'}
@@ -882,7 +882,7 @@ const PlanProduccion = () => {
             <button
               onClick={rehacer}
               disabled={indiceHistorial >= historialCambios.length - 1}
-              className={`btn btn-secondary flex items-center gap-2 px-3 py-2 text-sm ${indiceHistorial >= historialCambios.length - 1 ? 'opacity-50 cursor-not-allowed' : ''
+              className={`btn flex items-center gap-2 px-3 py-2 text-sm min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none ${indiceHistorial >= historialCambios.length - 1 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
                 }`}
               title={indiceHistorial >= historialCambios.length - 1 ? 'No hay cambios posteriores' : 'Rehacer último cambio'}
               aria-label={indiceHistorial >= historialCambios.length - 1 ? 'No hay cambios para rehacer' : 'Rehacer último cambio'}
@@ -895,10 +895,10 @@ const PlanProduccion = () => {
       </header>
 
       {/* Panel de Configuración Rápida de OEE - ¡AHORA SIN SLIDERS! */}
-      <section className="card bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-800/50" aria-labelledby="oee-config-title">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4">
+      <section className="card bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-800/50 rounded-lg shadow-sm" aria-labelledby="oee-config-title">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-500/20 p-2.5 rounded-lg">
+            <div className="bg-blue-500/20 p-3 rounded-lg">
               <Settings size={20} className="text-blue-400" aria-hidden="true" />
             </div>
             <div>
@@ -911,9 +911,9 @@ const PlanProduccion = () => {
                   const porcentaje = (oeeValue * 100).toFixed(0);
 
                   return (
-                    <div key={maquina} className="flex items-center gap-2 bg-gray-800/50 px-3 py-1.5 rounded-lg">
-                      <span className={`px-2 py-0.5 rounded text-xs ${oeeValue >= 0.85 ? 'bg-green-900/30 text-green-400' :
-                          oeeValue >= 0.70 ? 'bg-yellow-900/30 text-yellow-400' : 'bg-red-900/30 text-red-400'
+                    <div key={maquina} className="flex items-center gap-2 bg-gray-800/50 px-3 py-2 rounded-lg border border-gray-700/50">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${oeeValue >= 0.85 ? 'bg-green-900/30 text-green-400 border border-green-700/50' :
+                          oeeValue >= 0.70 ? 'bg-yellow-900/30 text-yellow-400 border border-yellow-700/50' : 'bg-red-900/30 text-red-400 border border-red-700/50'
                         }`}>
                         {maquina}:
                       </span>
@@ -928,7 +928,7 @@ const PlanProduccion = () => {
                           step="0.01"
                           value={oeeValue}
                           onChange={(e) => handleOeeChange(maquina, e.target.value)}
-                          className="w-16 h-7 bg-gray-800 border border-gray-700 rounded text-center text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-16 h-8 bg-gray-800 border border-gray-700 rounded text-center text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                           title={`OEE de ${maquina} (entre 0.5 y 1.0)`}
                           aria-describedby={`oee-${maquina}-desc`}
                         />
@@ -940,7 +940,7 @@ const PlanProduccion = () => {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-sm bg-blue-900/30 px-3 py-1.5 rounded-lg">
+          <div className="flex items-center gap-2 text-sm bg-blue-900/30 px-3 py-2 rounded-lg border border-blue-700/50">
             <Calculator size={16} className="text-yellow-400" aria-hidden="true" />
             <span className="font-medium text-yellow-400">
               Cálculos con OEE específico + Horario 24/7 (Cierre Sáb 14:00 - Dom 20:00)
@@ -971,36 +971,39 @@ const PlanProduccion = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
           <nav id="filters" className="flex flex-wrap gap-2 border-b border-border-color" role="tablist" aria-label="Pestañas de planificación">
             <button
-              className={`px-4 py-2 font-medium text-sm ${activeTab === 'planificacion' ? 'text-accent-purple border-b-2 border-accent-purple' : 'text-secondary'}`}
+              className={`px-4 py-3 font-medium text-sm min-h-[44px] transition-all duration-200 hover:bg-purple-900/20 focus:ring-2 focus:ring-purple-300 focus:outline-none rounded-t-lg ${activeTab === 'planificacion' ? 'text-accent-purple border-b-2 border-accent-purple bg-purple-900/10' : 'text-secondary hover:text-text-primary'
+                }`}
               onClick={() => setActiveTab('planificacion')}
               role="tab"
               aria-selected={activeTab === 'planificacion'}
               aria-controls="tab-panel-planificacion"
               id="tab-planificacion"
             >
-              <Factory size={16} className="inline mr-1" aria-hidden="true" />
+              <Factory size={16} className="inline mr-2" aria-hidden="true" />
               Planificación Inteligente
             </button>
             <button
-              className={`px-4 py-2 font-medium text-sm ${activeTab === 'maquinas' ? 'text-accent-purple border-b-2 border-accent-purple' : 'text-secondary'}`}
+              className={`px-4 py-3 font-medium text-sm min-h-[44px] transition-all duration-200 hover:bg-purple-900/20 focus:ring-2 focus:ring-purple-300 focus:outline-none rounded-t-lg ${activeTab === 'maquinas' ? 'text-accent-purple border-b-2 border-accent-purple bg-purple-900/10' : 'text-secondary hover:text-text-primary'
+                }`}
               onClick={() => setActiveTab('maquinas')}
               role="tab"
               aria-selected={activeTab === 'maquinas'}
               aria-controls="tab-panel-maquinas"
               id="tab-maquinas"
             >
-              <Cpu size={16} className="inline mr-1" aria-hidden="true" />
+              <Cpu size={16} className="inline mr-2" aria-hidden="true" />
               Utilización de Máquinas (24/7)
             </button>
             <button
-              className={`px-4 py-2 font-medium text-sm ${activeTab === 'historial' ? 'text-accent-purple border-b-2 border-accent-purple' : 'text-secondary'}`}
+              className={`px-4 py-3 font-medium text-sm min-h-[44px] transition-all duration-200 hover:bg-purple-900/20 focus:ring-2 focus:ring-purple-300 focus:outline-none rounded-t-lg ${activeTab === 'historial' ? 'text-accent-purple border-b-2 border-accent-purple bg-purple-900/10' : 'text-secondary hover:text-text-primary'
+                }`}
               onClick={() => setActiveTab('historial')}
               role="tab"
               aria-selected={activeTab === 'historial'}
               aria-controls="tab-panel-historial"
               id="tab-historial"
             >
-              <History size={16} className="inline mr-1" aria-hidden="true" />
+              <History size={16} className="inline mr-2" aria-hidden="true" />
               Historial de Cambios
             </button>
           </nav>
@@ -1014,7 +1017,7 @@ const PlanProduccion = () => {
                 id="search-input"
                 type="text"
                 placeholder="Buscar producto, cliente..."
-                className="form-control pl-9 w-full text-sm py-1.5"
+                className="form-control pl-10 w-full text-sm py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
                 value={filtros.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
               />
@@ -1023,7 +1026,7 @@ const PlanProduccion = () => {
             <label htmlFor="estado-select" className="sr-only">Filtrar por estado</label>
             <select
               id="estado-select"
-              className="form-control w-auto text-sm py-1.5 min-w-[140px]"
+              className="form-control w-auto text-sm py-3 min-h-[44px] px-4 transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
               value={filtros.estado}
               onChange={(e) => handleFilterChange('estado', e.target.value)}
             >
@@ -1036,7 +1039,7 @@ const PlanProduccion = () => {
             <label htmlFor="generacion-select" className="sr-only">Filtrar por generación</label>
             <select
               id="generacion-select"
-              className="form-control w-auto text-sm py-1.5 min-w-[140px]"
+              className="form-control w-auto text-sm py-3 min-h-[44px] px-4 transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
               value={filtros.generacion}
               onChange={(e) => handleFilterChange('generacion', e.target.value)}
             >
@@ -1048,7 +1051,7 @@ const PlanProduccion = () => {
             <label htmlFor="maquina-select" className="sr-only">Filtrar por máquina</label>
             <select
               id="maquina-select"
-              className="form-control w-auto text-sm py-1.5 min-w-[120px]"
+              className="form-control w-auto text-sm py-3 min-h-[44px] px-4 transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
               value={filtros.maquina}
               onChange={(e) => handleFilterChange('maquina', e.target.value)}
             >
@@ -1060,7 +1063,7 @@ const PlanProduccion = () => {
             </select>
 
             <button
-              className="btn btn-secondary btn-sm flex items-center gap-1 px-3 py-1.5"
+              className="btn btn-secondary btn-sm flex items-center gap-2 px-4 py-3 min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none"
               onClick={() => setFiltros({ estado: '', generacion: '', maquina: '', prioridad: '', search: '' })}
               aria-label="Limpiar todos los filtros"
             >
@@ -1077,46 +1080,46 @@ const PlanProduccion = () => {
               <table className="w-full text-sm" role="table" aria-label="Tabla de planificación de producción">
                 <thead>
                   <tr className="bg-bg-secondary/50">
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('no_sales_line')} scope="col" aria-sort={orden.campo === 'no_sales_line' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('no_sales_line')} scope="col" aria-sort={orden.campo === 'no_sales_line' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('no_sales_line')}>
                       Producto {orden.campo === 'no_sales_line' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden md:table-cell" onClick={() => handleSort('customer_name')} scope="col" aria-sort={orden.campo === 'customer_name' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden md:table-cell min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('customer_name')} scope="col" aria-sort={orden.campo === 'customer_name' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('customer_name')}>
                       Cliente {orden.campo === 'customer_name' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('generacion')} scope="col" aria-sort={orden.campo === 'generacion' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('generacion')} scope="col" aria-sort={orden.campo === 'generacion' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('generacion')}>
                       Generación {orden.campo === 'generacion' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_pendiente')} scope="col" aria-sort={orden.campo === 'cantidad_pendiente' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('cantidad_pendiente')} scope="col" aria-sort={orden.campo === 'cantidad_pendiente' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('cantidad_pendiente')}>
                       Pendiente {orden.campo === 'cantidad_pendiente' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap hidden sm:table-cell" onClick={() => handleSort('stock_disponible_ajustado')} scope="col" aria-sort={orden.campo === 'stock_disponible_ajustado' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap hidden sm:table-cell min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('stock_disponible_ajustado')} scope="col" aria-sort={orden.campo === 'stock_disponible_ajustado' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('stock_disponible_ajustado')}>
                       Stock Disp. {orden.campo === 'stock_disponible_ajustado' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_a_producir')} scope="col" aria-sort={orden.campo === 'cantidad_a_producir' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('cantidad_a_producir')} scope="col" aria-sort={orden.campo === 'cantidad_a_producir' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('cantidad_a_producir')}>
                       A Producir {orden.campo === 'cantidad_a_producir' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('cantidad_planificada')} scope="col" aria-sort={orden.campo === 'cantidad_planificada' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('cantidad_planificada')} scope="col" aria-sort={orden.campo === 'cantidad_planificada' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('cantidad_planificada')}>
                       Planificado {orden.campo === 'cantidad_planificada' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('fecha_inicio')} scope="col" aria-sort={orden.campo === 'fecha_inicio' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('fecha_inicio')} scope="col" aria-sort={orden.campo === 'fecha_inicio' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('fecha_inicio')}>
                       Fecha Inicio {orden.campo === 'fecha_inicio' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('fecha_fin')} scope="col" aria-sort={orden.campo === 'fecha_fin' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('fecha_fin')} scope="col" aria-sort={orden.campo === 'fecha_fin' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('fecha_fin')}>
                       Fecha Fin {orden.campo === 'fecha_fin' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('maquina_asignada')} scope="col" aria-sort={orden.campo === 'maquina_asignada' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('maquina_asignada')} scope="col" aria-sort={orden.campo === 'maquina_asignada' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('maquina_asignada')}>
                       Máquina {orden.campo === 'maquina_asignada' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('tiempo_estimado_min')} scope="col" aria-sort={orden.campo === 'tiempo_estimado_min' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-right font-medium text-secondary cursor-pointer whitespace-nowrap min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('tiempo_estimado_min')} scope="col" aria-sort={orden.campo === 'tiempo_estimado_min' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('tiempo_estimado_min')}>
                       Tiempo Est. {orden.campo === 'tiempo_estimado_min' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden lg:table-cell" onClick={() => handleSort('prioridad')} scope="col" aria-sort={orden.campo === 'prioridad' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap hidden lg:table-cell min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('prioridad')} scope="col" aria-sort={orden.campo === 'prioridad' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('prioridad')}>
                       Prioridad {orden.campo === 'prioridad' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap" onClick={() => handleSort('estado')} scope="col" aria-sort={orden.campo === 'estado' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    <th className="py-4 px-3 text-left font-medium text-secondary cursor-pointer whitespace-nowrap min-h-[44px] transition-all duration-200 hover:bg-bg-tertiary/50 focus:bg-bg-tertiary/50 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-sm" onClick={() => handleSort('estado')} scope="col" aria-sort={orden.campo === 'estado' ? (orden.direccion === 'asc' ? 'ascending' : 'descending') : 'none'} tabIndex="0" onKeyDown={(e) => e.key === 'Enter' && handleSort('estado')}>
                       Estado {orden.campo === 'estado' && (orden.direccion === 'asc' ? <SortAsc size={12} className="inline ml-1" aria-hidden="true" /> : <SortDesc size={12} className="inline ml-1" aria-hidden="true" />)}
                     </th>
-                    <th className="py-3 px-3 text-left font-medium text-secondary whitespace-nowrap" scope="col">Acciones</th>
+                    <th className="py-4 px-3 text-left font-medium text-secondary whitespace-nowrap min-h-[44px]" scope="col">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1182,8 +1185,9 @@ const PlanProduccion = () => {
                                 type="number"
                                 value={formData.cantidad_planificada}
                                 onChange={(e) => setFormData(prev => ({ ...prev, cantidad_planificada: e.target.value }))}
-                                className="form-control w-20 text-right text-sm py-1 px-2"
+                                className="form-control w-24 text-right text-sm py-2 px-3 min-h-[36px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
                                 min="0"
+                                aria-label="Cantidad planificada"
                               />
                             ) : (
                               <span className="font-bold">{orden.cantidad_planificada.toLocaleString()}</span>
@@ -1195,7 +1199,8 @@ const PlanProduccion = () => {
                                 type="date"
                                 value={formData.fecha_inicio}
                                 onChange={(e) => setFormData(prev => ({ ...prev, fecha_inicio: e.target.value }))}
-                                className="form-control w-32 text-sm py-1 px-2"
+                                className="form-control w-36 text-sm py-2 px-3 min-h-[36px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                                aria-label="Fecha de inicio"
                               />
                             ) : (
                               orden.fecha_inicio ? new Date(orden.fecha_inicio).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) : '-'
@@ -1203,12 +1208,13 @@ const PlanProduccion = () => {
                           </td>
                           <td className="whitespace-nowrap">
                             {editingRow === orden.id ? (
-                              <div className="flex gap-1">
+                              <div className="flex gap-2">
                                 <input
                                   type="date"
                                   value={formData.fecha_fin}
                                   onChange={(e) => setFormData(prev => ({ ...prev, fecha_fin: e.target.value }))}
-                                  className="form-control w-32 text-sm py-1 px-2"
+                                  className="form-control w-36 text-sm py-2 px-3 min-h-[36px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                                  aria-label="Fecha de fin"
                                 />
                                 <button
                                   onClick={() => {
@@ -1224,11 +1230,12 @@ const PlanProduccion = () => {
                                       setFormData(prev => ({ ...prev, fecha_fin: fechaFinCalculada }));
                                     }
                                   }}
-                                  className="btn btn-secondary btn-xs p-1"
+                                  className="btn btn-secondary btn-xs p-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none"
                                   title="Recalcular con OEE y horario 24/7"
+                                  aria-label="Recalcular fecha de fin"
                                   disabled={calculando || !formData.fecha_inicio || !formData.cantidad_planificada}
                                 >
-                                  <Calculator size={14} />
+                                  <Calculator size={14} aria-hidden="true" />
                                 </button>
                               </div>
                             ) : (
@@ -1240,7 +1247,8 @@ const PlanProduccion = () => {
                               <select
                                 value={formData.maquina_asignada}
                                 onChange={(e) => setFormData(prev => ({ ...prev, maquina_asignada: e.target.value }))}
-                                className="form-control w-24 text-sm py-1 px-2"
+                                className="form-control w-28 text-sm py-2 px-3 min-h-[36px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                                aria-label="Máquina asignada"
                               >
                                 <option value="">-- Seleccionar --</option>
                                 {orden.generacion === 'G1' ? (
@@ -1292,30 +1300,33 @@ const PlanProduccion = () => {
                           <td>{getEstadoBadge(orden.estado)}</td>
                           <td className="min-w-[110px]">
                             {editingRow === orden.id ? (
-                              <div className="flex gap-1">
+                              <div className="flex gap-2">
                                 <button
                                   onClick={() => handleSave(orden.id)}
-                                  className="btn btn-success btn-xs p-1"
+                                  className="btn btn-success btn-xs p-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-green-300 focus:outline-none"
                                   title="Guardar"
+                                  aria-label="Guardar cambios"
                                 >
-                                  <Save size={14} />
+                                  <Save size={14} aria-hidden="true" />
                                 </button>
                                 <button
                                   onClick={() => { setEditingRow(null); setFormData({}); }}
-                                  className="btn btn-secondary btn-xs p-1"
+                                  className="btn btn-secondary btn-xs p-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none"
                                   title="Cancelar"
+                                  aria-label="Cancelar edición"
                                 >
-                                  <X size={14} />
+                                  <X size={14} aria-hidden="true" />
                                 </button>
                               </div>
                             ) : (
-                              <div className="flex gap-1">
+                              <div className="flex gap-2">
                                 <button
                                   onClick={() => handleEdit(orden)}
-                                  className="btn btn-secondary btn-xs px-2 py-1"
+                                  className="btn btn-secondary btn-xs px-3 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none"
                                   title="Editar orden"
+                                  aria-label={`Editar orden ${orden.no_sales_line}`}
                                 >
-                                  <Edit2 size={14} />
+                                  <Edit2 size={14} aria-hidden="true" />
                                 </button>
                               </div>
                             )}
@@ -1336,19 +1347,21 @@ const PlanProduccion = () => {
                   <span className="ml-2 text-accent-blue">({Object.entries(filtros).filter(([k, v]) => v).map(([k, v]) => `${k}: ${v}`).join(', ')})</span>
                 )}
               </div>
-              <div className="mt-2 md:mt-0 flex gap-2">
+              <div className="mt-2 md:mt-0 flex gap-3">
                 <button
                   onClick={() => window.print()}
-                  className="btn btn-secondary btn-xs"
+                  className="btn btn-secondary btn-sm px-4 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                  aria-label="Exportar datos"
                 >
-                  <Download size={14} className="mr-1" />
+                  <Download size={14} className="mr-2" aria-hidden="true" />
                   Exportar
                 </button>
                 <button
                   onClick={() => setShowHistoryModal(true)}
-                  className="btn btn-secondary btn-xs bg-blue-900/20 hover:bg-blue-900/30"
+                  className="btn btn-secondary btn-sm px-4 py-2 min-h-[36px] bg-blue-900/20 hover:bg-blue-900/30 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                  aria-label="Ver historial de cambios"
                 >
-                  <History size={14} className="mr-1" />
+                  <History size={14} className="mr-2" aria-hidden="true" />
                   Ver Historial
                 </button>
               </div>
@@ -1613,7 +1626,7 @@ const PlanProduccion = () => {
                   <div className="relative">
                     <select
                       id="pedido-select"
-                      className="form-control pr-10"
+                      className="form-control pr-10 py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
                       value={nuevoPlan.alupak_pedido_id}
                       onChange={(e) => {
                         const pedidoId = e.target.value;
@@ -1735,7 +1748,7 @@ const PlanProduccion = () => {
                       <input
                         id="cantidad-producir"
                         type="number"
-                        className="form-control pl-10"
+                        className="form-control pl-12 py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
                         value={nuevoPlan.cantidad_planificada}
                         onChange={(e) => {
                           const valor = e.target.value;
@@ -1790,7 +1803,7 @@ const PlanProduccion = () => {
                     <div className="relative">
                       <select
                         id="maquina-select"
-                        className="form-control pr-10"
+                        className="form-control pr-10 py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
                         value={nuevoPlan.maquina_asignada}
                         onChange={(e) => {
                           const maquina = e.target.value;
@@ -1879,7 +1892,7 @@ const PlanProduccion = () => {
                       <input
                         id="fecha-inicio"
                         type="date"
-                        className="form-control"
+                        className="form-control py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
                         value={nuevoPlan.fecha_inicio}
                         onChange={(e) => {
                           const fecha = e.target.value;
@@ -1923,7 +1936,7 @@ const PlanProduccion = () => {
                       <input
                         id="fecha-fin"
                         type="date"
-                        className="form-control flex-1"
+                        className="form-control flex-1 py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
                         value={nuevoPlan.fecha_fin}
                         onChange={(e) => setNuevoPlan(prev => ({ ...prev, fecha_fin: e.target.value }))}
                         readOnly
@@ -1958,7 +1971,7 @@ const PlanProduccion = () => {
                             alert('⚠️ Completa primero: Pedido, Cantidad, Máquina y Fecha de Inicio');
                           }
                         }}
-                        className="btn btn-secondary p-2.5"
+                        className="btn btn-secondary p-3 min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none"
                         title="Recalcular con OEE y horario 24/7"
                         type="button"
                         aria-label="Recalcular fecha de fin con OEE y horario 24/7"
@@ -2033,7 +2046,7 @@ const PlanProduccion = () => {
                 </label>
                 <textarea
                   id="observaciones"
-                  className="form-control min-h-[100px]"
+                  className="form-control min-h-[100px] py-3 px-4 transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
                   value={nuevoPlan.observaciones}
                   onChange={(e) => setNuevoPlan(prev => ({ ...prev, observaciones: e.target.value }))}
                   placeholder="Notas adicionales para esta orden de producción... (ej: lote especial, cliente prioritario, etc.)"
@@ -2069,9 +2082,9 @@ const PlanProduccion = () => {
                       setShowModal(false);
                     }
                   }}
-                  className="btn btn-secondary flex-1 justify-center"
+                  className="btn btn-secondary flex-1 justify-center py-3 min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none"
                 >
-                  <X size={18} className="mr-2" />
+                  <X size={18} className="mr-2" aria-hidden="true" />
                   Cancelar
                 </button>
 
@@ -2224,7 +2237,7 @@ const PlanProduccion = () => {
                       alert('⚠️ La orden se creó en el planificador pero hubo un error al guardar en la base de datos. Los cambios se mantendrán en esta sesión.');
                     }
                   }}
-                  className="btn btn-primary flex-1 justify-center relative"
+                  className="btn btn-primary flex-1 justify-center relative py-3 min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none"
                   disabled={calculando || !nuevoPlan.alupak_pedido_id || !nuevoPlan.cantidad_planificada || !nuevoPlan.maquina_asignada || !nuevoPlan.fecha_inicio}
                 >
                   {calculando ? (
