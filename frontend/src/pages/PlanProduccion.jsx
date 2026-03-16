@@ -2299,13 +2299,15 @@ return (
                           setNuevoPlan(prev => ({ ...prev, fecha_fin: fechaFinCalculada }));
 
                           // Feedback visual
-                          const btn = document.querySelector('button[title="Recalcular con OEE y horario 24/7"]');
-                          if (btn && btn.classList) {
-                            btn.classList.add('animate-pulse');
-                            setTimeout(() => btn.classList.remove('animate-pulse'), 500);
-                          } else {
-                            console.warn('Button with title "Recalcular con OEE y horario 24/7" not found.');
-                          }
+                          setTimeout(() => {
+                            const btn = document.querySelector('button[title="Recalcular con OEE y horario 24/7"]');
+                            if (btn && btn.classList) {
+                              btn.classList.add('animate-pulse');
+                              setTimeout(() => btn.classList.remove('animate-pulse'), 500);
+                            } else {
+                              console.warn('Button with title "Recalcular con OEE y horario 24/7" not found or not rendered yet.');
+                            }
+                          }, 0);
                         }
                       } else {
                         alert('⚠️ Completa primero: Pedido, Cantidad, Máquina y Fecha de Inicio');

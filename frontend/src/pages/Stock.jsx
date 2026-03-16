@@ -65,27 +65,14 @@ const [resumen, setResumen] = useState({
     stockDetalle.forEach(item => {
       if (!agrupado[item.item_no]) {
         agrupado[item.item_no] = {
-          item_no: item.item_no,
-          producto_nombre: item.producto_nombre || item.item_no,
-          familia: item.producto_familia || '-',
-          stock_total: 0,
           ubicaciones: new Set(),
           lotes: new Set(),
-          stock_seguridad: item.stock_seguridad || 0,
+          stock_total: 0,
           nivel_stock: 'normal',
-          demanda_pendiente: 0,
-          cobertura: null
         };
       }
 
-      if (!agrupado[item.item_no].ubicaciones) {
-        agrupado[item.item_no].ubicaciones = new Set();
-      }
       if (item.bin_code) agrupado[item.item_no].ubicaciones.add(item.bin_code);
-
-      if (!agrupado[item.item_no].lotes) {
-        agrupado[item.item_no].lotes = new Set();
-      }
       if (item.lot_no) agrupado[item.item_no].lotes.add(item.lot_no);
 
       if (item.stock_seguridad) {
