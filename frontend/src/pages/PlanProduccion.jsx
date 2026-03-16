@@ -156,7 +156,8 @@ const PlanProduccion = () => {
   });
   const [activeTab, setActiveTab] = useState('planificacion');
   const [showModal, setShowModal] = useState(false);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState(null);
 
   // ✅ Estado inicializado con valores por defecto para evitar warnings
   const [nuevoPlan, setNuevoPlan] = useState({
@@ -556,6 +557,69 @@ const PlanProduccion = () => {
     return datos;
   }, [planManual, filtros, orden]);
 
+  // Función para mostrar feedback temporal
+  const showFeedback = (message, type = 'success', duration = 3000) => {
+    setFeedbackMessage({ message, type });
+    setTimeout(() => setFeedbackMessage(null), duration);
+  };
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Solo activar si no estamos en un input o textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.contentEditable === 'true') {
+        return;
+      }
+
+      switch (e.key) {
+        case 'n':
+        case 'N':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            setShowNewOrderModal(true);
+          }
+          break;
+        case 'z':
+        case 'Z':
+          if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+            e.preventDefault();
+            deshacer();
+          }
+          break;
+        case 'y':
+        case 'Y':
+          if ((e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            rehacer();
+          }
+          break;
+        case 's':
+        case 'S':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            guardarCambios();
+          }
+          break;
+        case 'f':
+        case 'F':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            // Enfocar el primer campo de filtro
+            const firstFilter = document.querySelector('input[type="text"], select');
+            if (firstFilter) firstFilter.focus();
+          }
+          break;
+        case '?':
+          if (e.shiftKey) {
+            e.preventDefault();
+            setShowKeyboardHelp(!showKeyboardHelp);
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showNewOrderModal, showHistoryModal, editingOrder, deshacer, rehacer, guardarCambios]);
+
   // Calcular resumen del plan
   const calcularResumenPlan = () => {
     const datos = datosFiltradosYOrdenados;
@@ -623,7 +687,10 @@ const PlanProduccion = () => {
       setPlanManual(estadoAnterior);
       setIndiceHistorial(nuevoIndice);
       window.dispatchEvent(new Event('planUpdated'));
+      showFeedback('Cambio deshecho', 'success');
       console.log(`↩️ Deshacer: Volviendo al estado ${nuevoIndice + 1}/${historialCambios.length}`);
+    } else {
+      showFeedback('No hay cambios para deshacer', 'warning');
     }
   };
 
@@ -634,7 +701,10 @@ const PlanProduccion = () => {
       setPlanManual(estadoSiguiente);
       setIndiceHistorial(nuevoIndice);
       window.dispatchEvent(new Event('planUpdated'));
+      showFeedback('Cambio rehecho', 'success');
       console.log(`↪️ Rehacer: Avanzando al estado ${nuevoIndice + 1}/${historialCambios.length}`);
+    } else {
+      showFeedback('No hay cambios para rehacer', 'warning');
     }
   };
 
@@ -840,7 +910,7 @@ const PlanProduccion = () => {
           </p>
         </div>
 
-        {/* Controles Rápidos Mejorados */}
+        {/* Controles Rápidos Mejorados - SIMPLIFICADOS */}
         <div className="flex flex-wrap gap-3 justify-end">
           <button
             onClick={() => fetchData(true)}
@@ -859,38 +929,6 @@ const PlanProduccion = () => {
             <Plus size={16} aria-hidden="true" />
             Nueva Orden
           </button>
-          <button
-            onClick={() => setShowHistoryModal(true)}
-            className="btn btn-secondary flex items-center gap-2 px-4 py-2 text-sm min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none bg-blue-900/20 hover:bg-blue-900/30"
-            aria-label="Ver historial de cambios"
-          >
-            <History size={16} aria-hidden="true" />
-            Historial ({historialCambios.length})
-          </button>
-          <div className="flex gap-2">
-            <button
-              onClick={deshacer}
-              disabled={indiceHistorial <= 0}
-              className={`btn flex items-center gap-2 px-3 py-2 text-sm min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none ${indiceHistorial <= 0 ? 'opacity-50 cursor-not-allowed' : 'btn-primary'
-                }`}
-              title={indiceHistorial <= 0 ? 'No hay cambios anteriores' : 'Deshacer último cambio'}
-              aria-label={indiceHistorial <= 0 ? 'No hay cambios para deshacer' : 'Deshacer último cambio'}
-            >
-              <Undo size={16} aria-hidden="true" />
-              <span className="hidden sm:inline">Deshacer</span>
-            </button>
-            <button
-              onClick={rehacer}
-              disabled={indiceHistorial >= historialCambios.length - 1}
-              className={`btn flex items-center gap-2 px-3 py-2 text-sm min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none ${indiceHistorial >= historialCambios.length - 1 ? 'btn-secondary opacity-50 cursor-not-allowed' : 'btn-primary'
-                }`}
-              title={indiceHistorial >= historialCambios.length - 1 ? 'No hay cambios posteriores' : 'Rehacer último cambio'}
-              aria-label={indiceHistorial >= historialCambios.length - 1 ? 'No hay cambios para rehacer' : 'Rehacer último cambio'}
-            >
-              <Redo size={16} aria-hidden="true" />
-              <span className="hidden sm:inline">Rehacer</span>
-            </button>
-          </div>
         </div>
       </header>
 
@@ -1339,30 +1377,94 @@ const PlanProduccion = () => {
               </table>
             </div>
 
-            {/* Resumen de resultados filtrados */}
-            <div className="mt-4 py-3 border-t border-border-color text-sm text-secondary flex flex-wrap justify-between items-center">
-              <div>
-                Mostrando <span className="font-bold">{datosFiltradosYOrdenados.length}</span> de <span className="font-bold">{planManual.length}</span> órdenes
+            {/* Barra de Acciones Contextuales */}
+            <div className="mt-4 flex flex-wrap justify-between items-center gap-4">
+              {/* Información de Estado */}
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${historialCambios.length > 0 ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`}></div>
+                  <span className="text-secondary">
+                    {historialCambios.length > 0
+                      ? `${historialCambios.length} cambio${historialCambios.length !== 1 ? 's' : ''} sin guardar`
+                      : 'Todos los cambios guardados'
+                    }
+                  </span>
+                </div>
+
                 {Object.values(filtros).some(f => f) && (
-                  <span className="ml-2 text-accent-blue">({Object.entries(filtros).filter(([k, v]) => v).map(([k, v]) => `${k}: ${v}`).join(', ')})</span>
+                  <div className="flex items-center gap-2 text-accent-blue">
+                    <FilterX size={14} aria-hidden="true" />
+                    <span>Filtros activos</span>
+                  </div>
                 )}
               </div>
-              <div className="mt-2 md:mt-0 flex gap-3">
+
+              {/* Acciones Principales */}
+              <div className="flex gap-2">
+                {/* Deshacer/Rehacer - Solo si hay cambios */}
+                {historialCambios.length > 0 && (
+                  <div className="flex gap-1 mr-2 border-r border-border-color pr-2">
+                    <button
+                      onClick={deshacer}
+                      disabled={indiceHistorial <= 0}
+                      className={`btn btn-sm flex items-center gap-1 px-2 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none ${
+                        indiceHistorial <= 0 ? 'opacity-50 cursor-not-allowed btn-secondary' : 'btn-primary'
+                      }`}
+                      title={indiceHistorial <= 0 ? 'No hay cambios para deshacer' : 'Deshacer último cambio (Ctrl+Z)'}
+                      aria-label={indiceHistorial <= 0 ? 'No hay cambios para deshacer' : 'Deshacer último cambio'}
+                    >
+                      <Undo size={14} aria-hidden="true" />
+                      <span className="hidden sm:inline ml-1">Deshacer</span>
+                    </button>
+                    <button
+                      onClick={rehacer}
+                      disabled={indiceHistorial >= historialCambios.length - 1}
+                      className={`btn btn-sm flex items-center gap-1 px-2 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none ${
+                        indiceHistorial >= historialCambios.length - 1 ? 'opacity-50 cursor-not-allowed btn-secondary' : 'btn-primary'
+                      }`}
+                      title={indiceHistorial >= historialCambios.length - 1 ? 'No hay cambios para rehacer' : 'Rehacer último cambio (Ctrl+Y)'}
+                      aria-label={indiceHistorial >= historialCambios.length - 1 ? 'No hay cambios para rehacer' : 'Rehacer último cambio'}
+                    >
+                      <Redo size={14} aria-hidden="true" />
+                      <span className="hidden sm:inline ml-1">Rehacer</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Acciones de Exportación e Historial */}
                 <button
                   onClick={() => window.print()}
-                  className="btn btn-secondary btn-sm px-4 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none"
-                  aria-label="Exportar datos"
+                  className="btn btn-secondary btn-sm flex items-center gap-2 px-3 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                  title="Exportar vista actual a PDF"
+                  aria-label="Exportar datos a PDF"
                 >
-                  <Download size={14} className="mr-2" aria-hidden="true" />
-                  Exportar
+                  <Download size={14} aria-hidden="true" />
+                  <span className="hidden sm:inline ml-1">Exportar</span>
                 </button>
+
                 <button
                   onClick={() => setShowHistoryModal(true)}
-                  className="btn btn-secondary btn-sm px-4 py-2 min-h-[36px] bg-blue-900/20 hover:bg-blue-900/30 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                  className="btn btn-secondary btn-sm flex items-center gap-2 px-3 py-2 min-h-[36px] bg-blue-900/20 hover:bg-blue-900/30 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                  title="Ver historial completo de cambios"
                   aria-label="Ver historial de cambios"
                 >
-                  <History size={14} className="mr-2" aria-hidden="true" />
-                  Ver Historial
+                  <History size={14} aria-hidden="true" />
+                  <span className="hidden sm:inline ml-1">Historial</span>
+                  {historialCambios.length > 0 && (
+                    <span className="ml-1 bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                      {historialCambios.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setShowKeyboardHelp(true)}
+                  className="btn btn-secondary btn-sm flex items-center gap-2 px-3 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                  title="Mostrar atajos de teclado (Shift+?)"
+                  aria-label="Mostrar ayuda de teclado"
+                >
+                  <Keyboard size={14} aria-hidden="true" />
+                  <span className="hidden sm:inline ml-1">Ayuda</span>
                 </button>
               </div>
             </div>
@@ -2489,6 +2591,80 @@ const PlanProduccion = () => {
         </div>
       )}
 
+      {/* Modal de Ayuda de Teclado */}
+      {showKeyboardHelp && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="keyboard-help-title">
+          <div className="bg-bg-primary border border-border-color rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 id="keyboard-help-title" className="text-xl font-bold flex items-center gap-2">
+                  <Keyboard size={20} aria-hidden="true" />
+                  Atajos de Teclado
+                </h2>
+                <button
+                  onClick={() => setShowKeyboardHelp(false)}
+                  className="btn btn-secondary btn-sm p-2"
+                  aria-label="Cerrar ayuda de teclado"
+                >
+                  <X size={16} aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-semibold mb-2 text-accent-blue">Navegación</h3>
+                    <div className="space-y-1">
+                      <div className="flex justify-between">
+                        <span>Buscar/Filtrar</span>
+                        <kbd className="bg-bg-secondary px-2 py-1 rounded text-xs">Ctrl+F</kbd>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Cerrar modales</span>
+                        <kbd className="bg-bg-secondary px-2 py-1 rounded text-xs">Esc</kbd>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold mb-2 text-accent-blue">Acciones</h3>
+                    <div className="space-y-1">
+                      <div className="flex justify-between">
+                        <span>Nueva orden</span>
+                        <kbd className="bg-bg-secondary px-2 py-1 rounded text-xs">Ctrl+N</kbd>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Guardar cambios</span>
+                        <kbd className="bg-bg-secondary px-2 py-1 rounded text-xs">Ctrl+S</kbd>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Deshacer</span>
+                        <kbd className="bg-bg-secondary px-2 py-1 rounded text-xs">Ctrl+Z</kbd>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Rehacer</span>
+                        <kbd className="bg-bg-secondary px-2 py-1 rounded text-xs">Ctrl+Y</kbd>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border-color pt-3 mt-4">
+                  <div className="flex justify-between items-center">
+                    <span>Mostrar/Ocultar esta ayuda</span>
+                    <kbd className="bg-bg-secondary px-2 py-1 rounded text-xs">Shift+?</kbd>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-border-color text-xs text-secondary">
+                <p>💡 <strong>Tip:</strong> Los atajos funcionan cuando no estás editando campos de texto.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Información para Planning - Actualizada con Horario 24/7 */}
       <section className="card bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-800/50 mt-6" aria-labelledby="info-title">
         <div className="flex items-start gap-4 p-4">
@@ -2541,6 +2717,24 @@ const PlanProduccion = () => {
           </div>
         </div>
       </section>
+
+      {/* Componente de Feedback */}
+      {feedbackMessage && (
+        <div className={`fixed bottom-4 right-4 z-50 p-4 rounded-lg shadow-lg border transition-all duration-300 transform translate-y-0 ${
+          feedbackMessage.type === 'success'
+            ? 'bg-green-900/90 border-green-600 text-green-100'
+            : feedbackMessage.type === 'warning'
+            ? 'bg-yellow-900/90 border-yellow-600 text-yellow-100'
+            : 'bg-red-900/90 border-red-600 text-red-100'
+        }`}>
+          <div className="flex items-center gap-2">
+            {feedbackMessage.type === 'success' && <CheckCircle size={18} aria-hidden="true" />}
+            {feedbackMessage.type === 'warning' && <AlertTriangle size={18} aria-hidden="true" />}
+            {feedbackMessage.type === 'error' && <XCircle size={18} aria-hidden="true" />}
+            <span className="font-medium">{feedbackMessage.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
