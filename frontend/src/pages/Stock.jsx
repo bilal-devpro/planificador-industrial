@@ -78,8 +78,14 @@ const [resumen, setResumen] = useState({
         };
       }
 
-      agrupado[item.item_no].stock_total += item.qty_base || 0;
+      if (!agrupado[item.item_no].ubicaciones) {
+        agrupado[item.item_no].ubicaciones = new Set();
+      }
       if (item.bin_code) agrupado[item.item_no].ubicaciones.add(item.bin_code);
+
+      if (!agrupado[item.item_no].lotes) {
+        agrupado[item.item_no].lotes = new Set();
+      }
       if (item.lot_no) agrupado[item.item_no].lotes.add(item.lot_no);
 
       if (item.stock_seguridad) {
