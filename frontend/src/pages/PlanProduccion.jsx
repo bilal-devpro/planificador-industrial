@@ -2300,7 +2300,7 @@ return (
 
                           // Feedback visual
                           const btn = document.querySelector('button[title="Recalcular con OEE y horario 24/7"]');
-                          if (btn) {
+                          if (btn && btn.classList) {
                             btn.classList.add('animate-pulse');
                             setTimeout(() => btn.classList.remove('animate-pulse'), 500);
                           }
