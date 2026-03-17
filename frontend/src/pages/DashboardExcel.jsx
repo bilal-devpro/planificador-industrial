@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Package, 
-  AlertTriangle, 
+import {
+  Package,
+  AlertTriangle,
   Download,
   RefreshCw,
   Database,
@@ -12,13 +12,13 @@ import {
   Cpu,
   Settings
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   Legend,
   PieChart,
   Pie,
@@ -36,12 +36,12 @@ const DashboardExcel = () => {
     stock: { productos_unicos: 0, cantidad_total: 0 },
     alertas: { stock_bajo: 0, sin_stock: 0 }
   });
-  
+
   const [pedidos, setPedidos] = useState([]);
   const [stock, setStock] = useState([]);
   // Inicializamos graficos como objeto con array vacío
   const [graficos, setGraficos] = useState({ pedidos_por_cliente: [] });
-  
+
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('resumen');
   const [exporting, setExporting] = useState(null);
@@ -85,12 +85,12 @@ const DashboardExcel = () => {
       setResumen(resumenData.resumen || {});
       setPedidos(Array.isArray(pedidosData.pedidos) ? pedidosData.pedidos : []);
       setStock(Array.isArray(stockData.stock) ? stockData.stock : []);
-      
+
       // CRÍTICO: Asegurar que pedidos_por_cliente sea siempre un array
       const datosGraficos = graficosData.graficos || {};
       setGraficos({
-        pedidos_por_cliente: Array.isArray(datosGraficos.pedidos_por_cliente) 
-          ? datosGraficos.pedidos_por_cliente 
+        pedidos_por_cliente: Array.isArray(datosGraficos.pedidos_por_cliente)
+          ? datosGraficos.pedidos_por_cliente
           : []
       });
 
@@ -112,15 +112,15 @@ const DashboardExcel = () => {
     return machinesConfig.map(machine => {
       const orders = pedidosList.filter(p => {
         const isG1 = p.no_sales_line?.startsWith('AL');
-        return (machine.generacion === 'G1' && isG1) || 
-               (machine.generacion === 'G2' && !isG1);
+        return (machine.generacion === 'G1' && isG1) ||
+          (machine.generacion === 'G2' && !isG1);
       }).length;
 
       const units = pedidosList
         .filter(p => {
           const isG1 = p.no_sales_line?.startsWith('AL');
-          return (machine.generacion === 'G1' && isG1) || 
-                 (machine.generacion === 'G2' && !isG1);
+          return (machine.generacion === 'G1' && isG1) ||
+            (machine.generacion === 'G2' && !isG1);
         })
         .reduce((sum, p) => sum + (p.qty_pending || 0), 0);
 
@@ -145,7 +145,7 @@ const DashboardExcel = () => {
     try {
       const response = await fetch(`${API}/api/dashboard-excel/exportar/${tipo}`);
       if (!response.ok) throw new Error('Error en exportación');
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -165,10 +165,10 @@ const DashboardExcel = () => {
   };
 
   // Cálculos derivados seguros
-  const pedidosRequierenProduccion = Array.isArray(pedidos) 
-    ? pedidos.filter(p => (p.stock_disponible || 0) < p.qty_pending).length 
+  const pedidosRequierenProduccion = Array.isArray(pedidos)
+    ? pedidos.filter(p => (p.stock_disponible || 0) < p.qty_pending).length
     : 0;
-  
+
   const stockPorGeneracion = {
     G1: Array.isArray(stock) ? stock.filter(s => s.item_no?.startsWith('AL')).length : 0,
     G2: Array.isArray(stock) ? stock.filter(s => s.item_no?.startsWith('AC')).length : 0
@@ -233,12 +233,88 @@ const DashboardExcel = () => {
       <div className="space-y-6">
         {activeTab === 'resumen' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
             
-            {/* GRÁFICO BARRAS - BLINDADO */}
+
+            {/* GRÁFICO PIE - STOCK POR GENERACIÓN */}
+            <div className="card bg-[#0d1117] border border-[#30363d] rounded-xl overflow-hidden shadow-xl">
+              {/* HEADER */}
+              <div className="p-4 border-b border-[#30363d]">
+                <h3 className="font-semibold text-[#f9fafb] flex items-center gap-2 tracking-wide">
+                  <PieChart size={20} className="text-[#a78bfa]" />
+                  Stock por Generación
+                </h3>
+              </div>
+
+              {/* BODY */}
+              <div style={{ width: '100%', height: '350px' }} className="relative">
+                {pieData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={110}
+                        paddingAngle={4}
+                        dataKey="value"
+                        label={({ name, percent }) => (
+                          `${name} ${(percent * 100).toFixed(0)}%`
+                        )}
+                        labelStyle={{
+                          fill: '#e5e7eb',
+                          fontSize: 12,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={['#60a5fa', '#a78bfa'][index % 2]}
+                            stroke="#0d1117"
+                            strokeWidth={2}
+                          />
+                        ))}
+                      </Pie>
+
+                      {/* TOOLTIP ACCESIBLE */}
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#161b22',
+                          borderColor: '#30363d',
+                          color: '#f9fafb',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                        }}
+                        itemStyle={{ color: '#f9fafb' }}
+                      />
+
+                      {/* LEYENDA ACCESIBLE */}
+                      <Legend
+                        verticalAlign="bottom"
+                        height={40}
+                        wrapperStyle={{
+                          color: '#e5e7eb',
+                          fontSize: 13,
+                          paddingTop: 10,
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-[#9ca3af]">
+                    <PieChart size={48} className="mb-2 opacity-20" />
+                    <p className="text-sm tracking-wide">Sin stock registrado</p>
+                  </div>
+                )}
+              </div>
+            </div>
+{/* GRÁFICO BARRAS - BLINDADO */}
             <div className="card bg-bg-secondary border border-border-color rounded-xl overflow-hidden shadow-lg">
               <div className="p-4 border-b border-border-color">
                 <h3 className="font-bold text-text-primary flex items-center gap-2">
-                  <BarChart3 size={20} className="text-blue-400"/> Pedidos por Cliente
+                  <BarChart3 size={20} className="text-blue-400" /> Pedidos por Cliente
                 </h3>
               </div>
               <div style={{ width: '100%', height: '350px' }} className="relative">
@@ -246,15 +322,15 @@ const DashboardExcel = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={graficos.pedidos_por_cliente.slice(0, 10)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#30363d" vertical={false} />
-                      <XAxis 
-                        dataKey="customer_name" 
-                        stroke="#8b949e" 
+                      <XAxis
+                        dataKey="customer_name"
+                        stroke="#8b949e"
                         tick={{ fontSize: 11 }}
                         interval={0}
                         tickFormatter={(val) => val.length > 15 ? val.substring(0, 15) + '...' : val}
                       />
                       <YAxis stroke="#8b949e" tick={{ fontSize: 11 }} />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ backgroundColor: '#1a1f29', borderColor: '#30363d', color: '#fff' }}
                       />
                       <Legend />
@@ -270,48 +346,10 @@ const DashboardExcel = () => {
               </div>
             </div>
 
-            {/* GRÁFICO PIE - BLINDADO */}
-            <div className="card bg-bg-secondary border border-border-color rounded-xl overflow-hidden shadow-lg">
-              <div className="p-4 border-b border-border-color">
-                <h3 className="font-bold text-text-primary flex items-center gap-2">
-                  <PieChart size={20} className="text-purple-400"/> Stock por Generación
-                </h3>
-              </div>
-              <div style={{ width: '100%', height: '350px' }} className="relative">
-                {pieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={['#3b82f6', '#8b5cf6'][index % 2]} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: '#1a1f29', borderColor: '#30363d', color: '#fff' }} />
-                      <Legend verticalAlign="bottom" height={36}/>
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-secondary">
-                    <PieChart size={48} className="mb-2 opacity-20" />
-                    <p>Sin stock registrado</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Alertas */}
             <div className="card bg-bg-secondary border border-border-color rounded-xl p-4 lg:col-span-2">
               <h3 className="font-bold text-text-primary mb-4 flex items-center gap-2">
-                <AlertTriangle className="text-yellow-400"/> Alertas
+                <AlertTriangle className="text-yellow-400" /> Alertas
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {pedidosRequierenProduccion > 0 && (
@@ -389,7 +427,7 @@ const DashboardExcel = () => {
 
         {activeTab === 'stock' && (
           <div className="card bg-bg-secondary border border-border-color rounded-xl overflow-hidden">
-             <div className="p-4 border-b border-border-color flex justify-between items-center">
+            <div className="p-4 border-b border-border-color flex justify-between items-center">
               <h3 className="font-bold text-text-primary">Inventario ({stock.length})</h3>
               <button onClick={() => handleExport('stock')} className="btn btn-secondary btn-sm flex items-center gap-2">
                 <Download size={16} /> Exportar
@@ -412,15 +450,14 @@ const DashboardExcel = () => {
                       <td className="p-3">{item.bin_code}</td>
                       <td className="p-3 text-right font-bold">{(item.qty_base || 0).toLocaleString()}</td>
                       <td className="p-3">
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          item.nivel_stock === 'critico' ? 'bg-red-900/30 text-red-400' :
-                          item.nivel_stock === 'bajo' ? 'bg-yellow-900/30 text-yellow-400' :
-                          'bg-green-900/30 text-green-400'
-                        }`}>{item.nivel_stock || 'Normal'}</span>
+                        <span className={`text-xs px-2 py-1 rounded ${item.nivel_stock === 'critico' ? 'bg-red-900/30 text-red-400' :
+                            item.nivel_stock === 'bajo' ? 'bg-yellow-900/30 text-yellow-400' :
+                              'bg-green-900/30 text-green-400'
+                          }`}>{item.nivel_stock || 'Normal'}</span>
                       </td>
                     </tr>
                   ))}
-                   {stock.length === 0 && (
+                  {stock.length === 0 && (
                     <tr><td colSpan="4" className="p-8 text-center text-secondary">No hay inventario cargado</td></tr>
                   )}
                 </tbody>
