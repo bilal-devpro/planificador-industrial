@@ -117,24 +117,52 @@ const calcularFechaFinConHorarioLaboral = (fechaInicio, minutosNecesarios) => {
   return currentDateTime;
 };
 
-// Calcular tiempo con OEE ESPECÍFICO de la máquina - ACTUALIZADO PARA 24/7
-const calcularTiempoProduccion = (cantidad, generacion, maquina, oee, fechaInicio) => {
-  if (cantidad <= 0) {
-    return { tiempoMinutos: 0, fechaFinCalculada: fechaInicio || '' };
-  }
+  // Calcular tiempo con OEE ESPECÍFICO de la máquina - ACTUALIZADO PARA 24/7
+  const calcularTiempoProduccion = (cantidad, generacion, maquina, oee, fechaInicio) => {
+    if (cantidad <= 0) {
+      return { tiempoMinutos: 0, fechaFinCalculada: fechaInicio || '' };
+    }
 
-  const capacidadPorMinuto = CONFIG_MAQUINAS[generacion].getCapacidad(maquina, oee);
-  const tiempoMinutos = Math.ceil(cantidad / capacidadPorMinuto);
+    const capacidadPorMinuto = CONFIG_MAQUINAS[generacion].getCapacidad(maquina, oee);
+    const tiempoMinutos = Math.ceil(cantidad / capacidadPorMinuto);
 
-  let fechaFin = '';
-  if (fechaInicio) {
-    const fecha = new Date(fechaInicio);
-    const fechaCalculada = calcularFechaFinConHorarioLaboral(fecha, tiempoMinutos);
-    fechaFin = fechaCalculada.toISOString().split('T')[0];
-  }
+    let fechaFin = '';
+    if (fechaInicio) {
+      const fecha = new Date(fechaInicio);
+      const fechaCalculada = calcularFechaFinConHorarioLaboral(fecha, tiempoMinutos);
+      fechaFin = fechaCalculada.toISOString().split('T')[0];
+    }
 
-  return { tiempoMinutos, fechaFinCalculada: fechaFin };
-};
+    return { tiempoMinutos, fechaFinCalculada: fechaFin };
+  };
+
+  // Calcular tiempo estimado de producción basado en OEE y disponibilidad
+  const calcularTiempoEstimado = (cantidad, velocidadPorCaja, oee, disponibilidad) => {
+    if (cantidad <= 0 || velocidadPorCaja <= 0 || oee <= 0) {
+      return 0;
+    }
+
+    // Calcular tiempo base (sin considerar disponibilidad)
+    const cajas = cantidad / velocidadPorCaja;
+    const tiempoBaseMinutos = cajas * 60; // Asumiendo 1 hora por caja base
+
+    // Aplicar OEE
+    const tiempoConOEE = tiempoBaseMinutos / oee;
+
+    // Considerar disponibilidad (si hay fecha de disponibilidad, calcular tiempo hasta esa fecha)
+    if (disponibilidad) {
+      const fechaDisponibilidad = new Date(disponibilidad);
+      const ahora = new Date();
+      
+      // Si la disponibilidad es en el futuro, sumar ese tiempo de espera
+      if (fechaDisponibilidad > ahora) {
+        const esperaMinutos = Math.ceil((fechaDisponibilidad - ahora) / 60000);
+        return Math.ceil(tiempoConOEE + esperaMinutos);
+      }
+    }
+
+    return Math.ceil(tiempoConOEE);
+  };
 
 const PlanProduccion = () => {
   // Estados principales - ✅ INICIALIZADOS CORRECTAMENTE
@@ -160,15 +188,22 @@ const PlanProduccion = () => {
 
   // ✅ Estado inicializado con valores por defecto para evitar warnings
   const [nuevoPlan, setNuevoPlan] = useState({
-    alupak_pedido_id: '',
-    cantidad_planificada: '',
+    producto: '',
+    cantidad: '',
     fecha_inicio: new Date().toISOString().split('T')[0],
     fecha_fin: '',
     linea_asignada: '',
+    tipo_orden: 'reposicion',
     prioridad: '3',
+    lote: '',
+    consumir_inventario: false,
     observaciones: '',
     maquina_asignada: '',
-    generacion: ''
+    generacion: '',
+    velocidad_produccion: 0,
+    oee_linea: 0.85,
+    disponibilidad_linea: null,
+    tiempo_estimado: 0
   });
 
   // Estados para filtros y ordenación
@@ -1606,133 +1641,393 @@ const PlanProduccion = () => {
             </div>
 
             <div className="space-y-6">
-              {/* Paso 1: Selección de Pedido */}
+              {/* Paso 1: Selección de Producto */}
               <div className="space-y-2">
-                <label className="form-label flex items-center gap-2" htmlFor="pedido-select">
+                <label className="form-label flex items-center gap-2" htmlFor="producto-select">
                   <Package size={18} className="text-purple-400" aria-hidden="true" />
-                  Pedido ALUPAK <span className="text-red-400">*</span>
+                  Producto <span className="text-red-400">*</span>
                 </label>
 
-                {pedidosSinPlan.length === 0 ? (
-                  <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4 text-center" role="alert">
-                    <AlertTriangle size={24} className="mx-auto text-yellow-400 mb-2" aria-hidden="true" />
-                    <p className="font-medium text-yellow-300">No hay pedidos pendientes sin planificar</p>
-                    <p className="text-sm mt-1">
-                      Todos los pedidos ya tienen una orden de producción asignada.
-                      Puedes editar las órdenes existentes o importar nuevos datos de ALUPAK.
-                    </p>
+                <div className="relative">
+                  <select
+                    id="producto-select"
+                    className="form-control pr-10 py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                    value={nuevoPlan.producto}
+                    onChange={(e) => {
+                      const producto = e.target.value;
+                      if (!producto) {
+                        setNuevoPlan(prev => ({
+                          ...prev,
+                          producto: '',
+                          generacion: '',
+                          velocidad_produccion: 0,
+                          maquina_asignada: '',
+                          cantidad: '',
+                          fecha_fin: ''
+                        }));
+                        return;
+                      }
+
+                      // Determinar generación y velocidad de producción
+                      const esG1 = producto.startsWith('AL');
+                      const esG2 = producto.startsWith('AC');
+                      const generacion = esG1 ? 'G1' : (esG2 ? 'G2' : 'G1');
+                      const velocidad = esG1 ? 16380 : 15600; // unidades por caja
+
+                      // Seleccionar primera máquina disponible
+                      const maquinasDisponibles = CONFIG_MAQUINAS[generacion].maquinas;
+                      const maquinaDefault = maquinasDisponibles[0];
+
+                      setNuevoPlan(prev => ({
+                        ...prev,
+                        producto: producto,
+                        generacion: generacion,
+                        velocidad_produccion: velocidad,
+                        maquina_asignada: maquinaDefault
+                      }));
+                    }}
+                    required
+                    aria-describedby="producto-help"
+                  >
+                    <option value="">-- Seleccionar producto --</option>
+                    <option value="AL001">AL001 - Producto Generación 1 (16,380 u/caja)</option>
+                    <option value="AL002">AL002 - Producto Generación 1 (16,380 u/caja)</option>
+                    <option value="AC001">AC001 - Producto Generación 2 (15,600 u/caja)</option>
+                    <option value="AC002">AC002 - Producto Generación 2 (15,600 u/caja)</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-secondary">
+                    <ChevronDown size={18} aria-hidden="true" />
                   </div>
-                ) : (
-                  <div className="relative">
-                    <select
-                      id="pedido-select"
-                      className="form-control pr-10 py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
-                      value={nuevoPlan.alupak_pedido_id}
-                      onChange={(e) => {
-                        const pedidoId = e.target.value;
-                        if (!pedidoId) {
-                          // Resetear formulario si se selecciona "Seleccionar pedido"
-                          setNuevoPlan({
-                            alupak_pedido_id: '',
-                            cantidad_planificada: '',
-                            fecha_inicio: new Date().toISOString().split('T')[0],
-                            fecha_fin: '',
-                            linea_asignada: '',
-                            prioridad: '3',
-                            observaciones: '',
-                            maquina_asignada: '',
-                            generacion: ''
-                          });
-                          return;
-                        }
+                  <div id="producto-help" className="sr-only">Selecciona el producto a producir</div>
+                </div>
 
-                        const pedido = pedidos.find(p => p.id === parseInt(pedidoId));
-                        if (pedido) {
-                          // Determinar generación automáticamente
-                          const esG1 = pedido.no_sales_line.startsWith('AL');
-                          const esG2 = pedido.no_sales_line.startsWith('AC');
-                          const generacion = esG1 ? 'G1' : (esG2 ? 'G2' : 'G1');
-
-                          // Seleccionar primera máquina disponible para la generación
-                          const maquinasDisponibles = CONFIG_MAQUINAS[generacion].maquinas;
-                          const maquinaDefault = maquinasDisponibles[0];
-
-                          // Calcular fecha de fin inicial
-                          const fechaInicio = nuevoPlan.fecha_inicio || new Date().toISOString().split('T')[0];
-                          const oeeMaquina = oeeMaquinas[maquinaDefault] || 0.85;
-                          const { fechaFinCalculada } = calcularTiempoProduccion(
-                            parseInt(pedido.qty_pending) || 0,
-                            generacion,
-                            maquinaDefault,
-                            oeeMaquina,
-                            fechaInicio
-                          );
-
-                          setNuevoPlan(prev => ({
-                            ...prev,
-                            alupak_pedido_id: pedidoId,
-                            cantidad_planificada: pedido.qty_pending.toString(),
-                            maquina_asignada: maquinaDefault,
-                            generacion: generacion,
-                            fecha_fin: fechaFinCalculada
-                          }));
-                        }
-                      }}
-                      required
-                      aria-describedby="pedido-help"
-                    >
-                      <option value="">-- Seleccionar pedido pendiente --</option>
-                      {pedidosSinPlan.map(pedido => {
-                        // Determinar generación para mostrar en el dropdown
-                        const esG1 = pedido.no_sales_line.startsWith('AL');
-                        const esG2 = pedido.no_sales_line.startsWith('AC');
-                        const generacion = esG1 ? 'G1 (AL)' : (esG2 ? 'G2 (AC)' : 'Desconocida');
-
-                        return (
-                          <option
-                            key={pedido.id}
-                            value={pedido.id}
-                            className="bg-bg-secondary hover:bg-bg-surface"
-                          >
-                            {pedido.customer_name} - {pedido.no_sales_line}
-                            {pedido.producto_nombre && `(${pedido.producto_nombre})`}
-                            • {pedido.qty_pending.toLocaleString()} u • {generacion}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-secondary">
-                      <ChevronDown size={18} aria-hidden="true" />
-                    </div>
-                    <div id="pedido-help" className="sr-only">Selecciona un pedido de ALUPAK para crear una orden de producción</div>
-                  </div>
-                )}
-
-                {nuevoPlan.alupak_pedido_id && (
+                {nuevoPlan.producto && (
                   <div className="mt-2 p-3 bg-bg-secondary rounded-lg text-sm">
                     <div className="flex justify-between">
-                      <span className="text-secondary">Cliente:</span>
-                      <span className="font-medium">{pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.customer_name}</span>
+                      <span className="text-secondary">Generación:</span>
+                      <span className="font-medium">{nuevoPlan.generacion}</span>
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-secondary">Producto:</span>
-                      <span className="font-medium flex items-center gap-2">
-                        <Package size={14} className="text-purple-400" />
-                        {pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.no_sales_line}
-                      </span>
+                      <span className="text-secondary">Velocidad de producción:</span>
+                      <span className="font-medium">{nuevoPlan.velocidad_produccion.toLocaleString()} u/caja</span>
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-secondary">Stock disponible:</span>
-                      <span className={`font-medium ${(pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.stock_disponible || 0) <
-                          (pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.qty_pending || 0)
-                          ? 'text-accent-red'
-                          : 'text-accent-green'
-                        }`}>
-                        {(pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id))?.stock_disponible || 0).toLocaleString()} u
-                      </span>
+                      <span className="text-secondary">Máquinas disponibles:</span>
+                      <span className="font-medium">{CONFIG_MAQUINAS[nuevoPlan.generacion]?.maquinas.join(', ')}</span>
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Paso 2: Tipo de Orden */}
+              <div className="space-y-2">
+                <label className="form-label flex items-center gap-2" htmlFor="tipo-orden">
+                  <Factory size={18} className="text-blue-400" aria-hidden="true" />
+                  Tipo de Orden <span className="text-red-400">*</span>
+                </label>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                    nuevoPlan.tipo_orden === 'reposicion' ? 'border-blue-500 bg-blue-900/20' : 'border-border-color hover:border-blue-400'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="tipo_orden"
+                      value="reposicion"
+                      checked={nuevoPlan.tipo_orden === 'reposicion'}
+                      onChange={(e) => setNuevoPlan(prev => ({ ...prev, tipo_orden: e.target.value }))}
+                      className="form-radio text-blue-500"
+                    />
+                    <div>
+                      <div className="font-medium">Reposición</div>
+                      <div className="text-xs text-secondary">Producción para mantener stock</div>
+                    </div>
+                  </label>
+
+                  <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                    nuevoPlan.tipo_orden === 'pedido' ? 'border-green-500 bg-green-900/20' : 'border-border-color hover:border-green-400'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="tipo_orden"
+                      value="pedido"
+                      checked={nuevoPlan.tipo_orden === 'pedido'}
+                      onChange={(e) => setNuevoPlan(prev => ({ ...prev, tipo_orden: e.target.value }))}
+                      className="form-radio text-green-500"
+                    />
+                    <div>
+                      <div className="font-medium">Pedido</div>
+                      <div className="text-xs text-secondary">Producción para pedido específico</div>
+                    </div>
+                  </label>
+
+                  <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                    nuevoPlan.tipo_orden === 'urgente' ? 'border-red-500 bg-red-900/20' : 'border-border-color hover:border-red-400'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="tipo_orden"
+                      value="urgente"
+                      checked={nuevoPlan.tipo_orden === 'urgente'}
+                      onChange={(e) => setNuevoPlan(prev => ({ ...prev, tipo_orden: e.target.value }))}
+                      className="form-radio text-red-500"
+                    />
+                    <div>
+                      <div className="font-medium">Urgente</div>
+                      <div className="text-xs text-secondary">Producción prioritaria</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Paso 3: Configuración de Producción */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border-color">
+                {/* Columna Izquierda */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="form-label flex items-center gap-2" htmlFor="cantidad">
+                      <HardHat size={18} className="text-yellow-400" aria-hidden="true" />
+                      Cantidad a Producir <span className="text-red-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="cantidad"
+                        type="number"
+                        className="form-control pl-12 py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                        value={nuevoPlan.cantidad}
+                        onChange={(e) => {
+                          const valor = e.target.value;
+                          setNuevoPlan(prev => ({ ...prev, cantidad: valor }));
+                          
+                          // Calcular tiempo estimado
+                          if (valor && prev.velocidad_produccion && prev.oee_linea && prev.disponibilidad_linea) {
+                            const tiempo = calcularTiempoEstimado(
+                              parseInt(valor),
+                              prev.velocidad_produccion,
+                              prev.oee_linea,
+                              prev.disponibilidad_linea
+                            );
+                            setNuevoPlan(prev => ({ ...prev, tiempo_estimado: tiempo }));
+                          }
+                        }}
+                        min="1"
+                        placeholder="Ej: 50000"
+                        required
+                        aria-describedby="cantidad-help"
+                      />
+                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-yellow-400">
+                        <Scale size={18} aria-hidden="true" />
+                      </div>
+                      <div id="cantidad-help" className="sr-only">Ingresa la cantidad de unidades a producir</div>
+                    </div>
+                    {nuevoPlan.cantidad && (
+                      <p className="text-xs text-secondary mt-1">
+                        {Math.ceil(parseInt(nuevoPlan.cantidad) / nuevoPlan.velocidad_produccion)} cajas aproximadamente
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="form-label flex items-center gap-2" htmlFor="maquina">
+                      <Cpu size={18} className="text-blue-400" aria-hidden="true" />
+                      Máquina Asignada <span className="text-red-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="maquina"
+                        className="form-control pr-10 py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                        value={nuevoPlan.maquina_asignada}
+                        onChange={(e) => {
+                          const maquina = e.target.value;
+                          setNuevoPlan(prev => ({ ...prev, maquina_asignada: maquina }));
+                          
+                          // Actualizar OEE de la línea basado en la máquina
+                          const oeeMaquina = oeeMaquinas[maquina] || 0.85;
+                          setNuevoPlan(prev => ({ ...prev, oee_linea: oeeMaquina }));
+                        }}
+                        required
+                        disabled={!nuevoPlan.producto}
+                        aria-describedby="maquina-help"
+                      >
+                        <option value="">-- Seleccionar máquina --</option>
+                        {nuevoPlan.generacion && CONFIG_MAQUINAS[nuevoPlan.generacion]?.maquinas.map(maquina => {
+                          const oee = (oeeMaquinas[maquina] || 0.85) * 100;
+                          const pistas = maquina === 'M4' ? 6 : 12;
+                          return (
+                            <option key={maquina} value={maquina} className="bg-bg-secondary">
+                              {maquina} • {pistas} pistas • OEE: {oee.toFixed(0)}% • Cap: {Math.round(CONFIG_MAQUINAS[nuevoPlan.generacion].getCapacidad(maquina, oeeMaquinas[maquina] || 0.85))} u/min
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-secondary">
+                        <ChevronDown size={18} aria-hidden="true" />
+                      </div>
+                      <div id="maquina-help" className="sr-only">Selecciona la máquina que se utilizará para la producción</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Columna Derecha */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="form-label flex items-center gap-2" htmlFor="oee-linea">
+                      <Calculator size={18} className="text-green-400" aria-hidden="true" />
+                      OEE de Línea <span className="text-red-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="oee-linea"
+                        type="number"
+                        step="0.01"
+                        min="0.5"
+                        max="1.0"
+                        className="form-control pl-12 py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                        value={nuevoPlan.oee_linea}
+                        onChange={(e) => {
+                          const valor = parseFloat(e.target.value);
+                          if (!isNaN(valor) && valor >= 0.5 && valor <= 1.0) {
+                            setNuevoPlan(prev => ({ ...prev, oee_linea: valor }));
+                            
+                            // Recalcular tiempo estimado
+                            if (prev.cantidad && prev.velocidad_produccion && prev.disponibilidad_linea) {
+                              const tiempo = calcularTiempoEstimado(
+                                parseInt(prev.cantidad),
+                                prev.velocidad_produccion,
+                                valor,
+                                prev.disponibilidad_linea
+                              );
+                              setNuevoPlan(prev => ({ ...prev, tiempo_estimado: tiempo }));
+                            }
+                          }
+                        }}
+                        required
+                        aria-describedby="oee-help"
+                      />
+                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-400">
+                        <Calculator size={18} aria-hidden="true" />
+                      </div>
+                      <div id="oee-help" className="sr-only">OEE (Eficiencia General de Equipo) de la línea de producción</div>
+                    </div>
+                    <p className="text-xs text-secondary mt-1">
+                      Valor entre 0.5 y 1.0. Actual: {(nuevoPlan.oee_linea * 100).toFixed(0)}%
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="form-label flex items-center gap-2" htmlFor="disponibilidad">
+                      <Clock size={18} className="text-purple-400" aria-hidden="true" />
+                      Disponibilidad de Línea
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="disponibilidad"
+                        type="date"
+                        className="form-control py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                        value={nuevoPlan.disponibilidad_linea || ''}
+                        onChange={(e) => {
+                          setNuevoPlan(prev => ({ ...prev, disponibilidad_linea: e.target.value }));
+                          
+                          // Recalcular tiempo estimado
+                          if (prev.cantidad && prev.velocidad_produccion && prev.oee_linea) {
+                            const tiempo = calcularTiempoEstimado(
+                              parseInt(prev.cantidad),
+                              prev.velocidad_produccion,
+                              prev.oee_linea,
+                              e.target.value
+                            );
+                            setNuevoPlan(prev => ({ ...prev, tiempo_estimado: tiempo }));
+                          }
+                        }}
+                        aria-describedby="disponibilidad-help"
+                      />
+                      <div id="disponibilidad-help" className="sr-only">Fecha de disponibilidad de la línea de producción</div>
+                    </div>
+                    <p className="text-xs text-secondary mt-1">
+                      Horario operativo: 24/7 (excepto cierre Sáb 14:00 - Dom 20:00)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Paso 4: Configuración Avanzada */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-border-color">
+                <div>
+                  <label className="form-label flex items-center gap-2" htmlFor="lote">
+                    <Tag size={18} className="text-orange-400" aria-hidden="true" />
+                    Número de Lote
+                  </label>
+                  <input
+                    id="lote"
+                    type="text"
+                    className="form-control py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                    value={nuevoPlan.lote}
+                    onChange={(e) => setNuevoPlan(prev => ({ ...prev, lote: e.target.value }))}
+                    placeholder="Ej: LOTE-2024-001"
+                    aria-describedby="lote-help"
+                  />
+                  <div id="lote-help" className="sr-only">Número de lote para trazabilidad de producción</div>
+                </div>
+
+                <div>
+                  <label className="form-label flex items-center gap-2" htmlFor="prioridad">
+                    <TrendingUp size={18} className="text-yellow-400" aria-hidden="true" />
+                    Prioridad
+                  </label>
+                  <select
+                    id="prioridad"
+                    className="form-control py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                    value={nuevoPlan.prioridad}
+                    onChange={(e) => setNuevoPlan(prev => ({ ...prev, prioridad: e.target.value }))}
+                    aria-describedby="prioridad-help"
+                  >
+                    <option value="1">Alta - Producción inmediata</option>
+                    <option value="2">Media - Esta semana</option>
+                    <option value="3" selected>Baja - Planificación normal</option>
+                  </select>
+                  <div id="prioridad-help" className="sr-only">Nivel de prioridad de la orden de producción</div>
+                </div>
+
+                <div className="flex items-end">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={nuevoPlan.consumir_inventario}
+                      onChange={(e) => setNuevoPlan(prev => ({ ...prev, consumir_inventario: e.target.checked }))}
+                      className="form-checkbox text-blue-500"
+                    />
+                    <div>
+                      <div className="font-medium">Consumir Inventario</div>
+                      <div className="text-xs text-secondary">Deducir del stock disponible</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Paso 5: Resumen y Cálculos */}
+              <div className="bg-bg-secondary rounded-lg p-4 border border-border-color">
+                <h4 className="font-bold mb-3 flex items-center gap-2">
+                  <Calculator size={18} className="text-green-400" aria-hidden="true" />
+                  Resumen de Producción
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                  <div className="bg-bg-primary rounded p-3">
+                    <div className="text-secondary text-xs">Cantidad Total</div>
+                    <div className="font-bold text-lg">{nuevoPlan.cantidad ? parseInt(nuevoPlan.cantidad).toLocaleString() : '0'} u</div>
+                  </div>
+                  <div className="bg-bg-primary rounded p-3">
+                    <div className="text-secondary text-xs">Cajas Necesarias</div>
+                    <div className="font-bold text-lg">{nuevoPlan.cantidad ? Math.ceil(parseInt(nuevoPlan.cantidad) / nuevoPlan.velocidad_produccion) : '0'}</div>
+                  </div>
+                  <div className="bg-bg-primary rounded p-3">
+                    <div className="text-secondary text-xs">Tiempo Estimado</div>
+                    <div className="font-bold text-lg">{nuevoPlan.tiempo_estimado ? `${Math.floor(nuevoPlan.tiempo_estimado / 60)}h ${nuevoPlan.tiempo_estimado % 60}m` : '0h 0m'}</div>
+                  </div>
+                  <div className="bg-bg-primary rounded p-3">
+                    <div className="text-secondary text-xs">OEE Aplicado</div>
+                    <div className="font-bold text-lg">{(nuevoPlan.oee_linea * 100).toFixed(0)}%</div>
+                  </div>
+                </div>
               </div>
 
               {/* Paso 2: Parámetros de Producción */}
