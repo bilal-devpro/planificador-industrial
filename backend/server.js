@@ -35,6 +35,7 @@ app.use('/api/alupak', require('./routes/alupak'));
 app.use('/api/inventario', require('./routes/inventario'));
 app.use('/api/of', require('./routes/of'));
 app.use('/api/plan', require('./routes/plan'));
+app.use('/api/maquinas', require('./routes/maquinas'));
 app.use('/api/lineas', require('./routes/lineas'));
 
 app.get('/api/health', (req, res) => {
