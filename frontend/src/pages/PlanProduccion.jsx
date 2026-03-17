@@ -1799,15 +1799,11 @@ const PlanProduccion = () => {
                           const valor = e.target.value;
                           setNuevoPlan(prev => ({ ...prev, cantidad: valor }));
                           
-                          // Calcular tiempo estimado
-                          if (valor && prev.velocidad_produccion && prev.oee_linea && prev.disponibilidad_linea) {
-                            const tiempo = calcularTiempoEstimado(
-                              parseInt(valor),
-                              prev.velocidad_produccion,
-                              prev.oee_linea,
-                              prev.disponibilidad_linea
-                            );
-                            setNuevoPlan(prev => ({ ...prev, tiempo_estimado: tiempo }));
+                          // Calcular tiempo estimado basado en capacidad de la máquina
+                          if (valor && prev.velocidad_produccion && prev.oee_linea && prev.maquina_asignada && prev.generacion) {
+                            const capacidadPorMinuto = CONFIG_MAQUINAS[prev.generacion].getCapacidad(prev.maquina_asignada, prev.oee_linea);
+                            const tiempoMinutos = Math.ceil(parseInt(valor) / capacidadPorMinuto);
+                            setNuevoPlan(prev => ({ ...prev, tiempo_estimado: tiempoMinutos }));
                           }
                         }}
                         min="1"
@@ -1841,9 +1837,20 @@ const PlanProduccion = () => {
                           const maquina = e.target.value;
                           setNuevoPlan(prev => ({ ...prev, maquina_asignada: maquina }));
                           
-                          // Actualizar OEE de la línea basado en la máquina
+                          // Actualizar OEE de la línea basado en la máquina seleccionada
                           const oeeMaquina = oeeMaquinas[maquina] || 0.85;
                           setNuevoPlan(prev => ({ ...prev, oee_linea: oeeMaquina }));
+                          
+                          // Recalcular tiempo estimado con el nuevo OEE
+                          if (prev.cantidad && prev.velocidad_produccion && prev.disponibilidad_linea) {
+                            const tiempo = calcularTiempoEstimado(
+                              parseInt(prev.cantidad),
+                              prev.velocidad_produccion,
+                              oeeMaquina,
+                              prev.disponibilidad_linea
+                            );
+                            setNuevoPlan(prev => ({ ...prev, tiempo_estimado: tiempo }));
+                          }
                         }}
                         required
                         disabled={!nuevoPlan.producto}
