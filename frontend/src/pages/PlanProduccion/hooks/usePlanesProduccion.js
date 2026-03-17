@@ -24,7 +24,38 @@ export function usePlanesProduccion() {
   }
 
   /**
-   * Fetch planes del historial con paginación
+   * Fetch planes ACTIVOS (no completados)
+   */
+  const fetchPlanesActuales = useCallback(async () => {
+    try {
+      setLoading(true);
+      context.setLoading(true);
+
+      const response = await fetch(`${API_URL}/plan`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const planes = data.planes || data || [];
+
+      context.setPlanes(planes);
+
+      return { success: true, planes };
+    } catch (error) {
+      const errorNorm = normalizarErrorAPI(error);
+      context.setErrores({ _general: errorNorm.message });
+      console.error('Error fetching planes actuales:', errorNorm);
+      return { success: false, error: errorNorm };
+    } finally {
+      setLoading(false);
+      context.setLoading(false);
+    }
+  }, [context]);
+
+  /**
+   * Fetch planes del historial CON PAGINACIÓN (completados)
    */
   const fetchPlanesHistorial = useCallback(async (pagina = 1) => {
     try {
@@ -44,7 +75,6 @@ export function usePlanesProduccion() {
       const data = await response.json();
       const { planes = [], pagina_actual = 1, total_paginas = 1, total_registros = 0 } = data;
 
-      context.setPlanes(planes);
       context.setPagination({
         pagina_actual,
         total_paginas,
@@ -55,7 +85,7 @@ export function usePlanesProduccion() {
     } catch (error) {
       const errorNorm = normalizarErrorAPI(error);
       context.setErrores({ _general: errorNorm.message });
-      console.error('Error fetching planes:', errorNorm);
+      console.error('Error fetching historial:', errorNorm);
       return { success: false, error: errorNorm };
     } finally {
       setLoading(false);
@@ -103,11 +133,17 @@ export function usePlanesProduccion() {
 
       const guardarData = await guardarResponse.json();
 
-      if (guardarData.ids_guardados) {
-        // Agregar los nuevos planes al contexto
-        planesAGuardar.forEach(plan => context.addPlan(plan));
-        context.setErrores({ _success: 'Plan creado exitosamente' });
-        return { success: true, ids: guardarData.ids_guardados };
+      if (guardarData.ids_guardados && guardarData.ids_guardados.length > 0) {
+        // Asignar IDs a los planes guardados
+        const planesGuardados = planesAGuardar.map((plan, idx) => ({
+          ...plan,
+          id: guardarData.ids_guardados[idx]
+        }));
+
+        // Agregar los planes con IDs al contexto
+        planesGuardados.forEach(plan => context.addPlan(plan));
+        context.setErrores({ _success: `${planesGuardados.length} plan(es) creado(s) exitosamente` });
+        return { success: true, ids: guardarData.ids_guardados, planes: planesGuardados };
       }
 
       throw new Error('No se guardaron los planes');
@@ -221,6 +257,7 @@ export function usePlanesProduccion() {
 
   return {
     loading,
+    fetchPlanesActuales,
     fetchPlanesHistorial,
     crearPlanDesdeFormulario,
     editarPlan,

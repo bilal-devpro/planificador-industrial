@@ -41,6 +41,7 @@ function PlanProduccionContent() {
   } = usePlanContext();
 
   const {
+    fetchPlanesActuales,
     fetchPlanesHistorial,
     crearPlanDesdeFormulario,
     editarPlan,
@@ -54,8 +55,15 @@ function PlanProduccionContent() {
 
   // Cargar planes al montar
   useEffect(() => {
-    fetchPlanesHistorial(1);
-  }, []);
+    fetchPlanesActuales();
+  }, [fetchPlanesActuales]);
+
+  // Cargar historial cuando cambia de tab
+  useEffect(() => {
+    if (activeTab === 'historial') {
+      fetchPlanesHistorial(1);
+    }
+  }, [activeTab, fetchPlanesHistorial]);
 
   // Manejo de error crítico
   if (errores?.critico) {
@@ -89,7 +97,7 @@ function PlanProduccionContent() {
 
         <div className="flex flex-wrap gap-3">
           <button
-            onClick={() => fetchPlanesHistorial(1)}
+            onClick={() => activeTab === 'planes' ? fetchPlanesActuales() : fetchPlanesHistorial(1)}
             className="btn btn-secondary flex items-center gap-2"
             disabled={loading}
           >
