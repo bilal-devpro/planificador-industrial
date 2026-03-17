@@ -1833,7 +1833,23 @@ const PlanProduccion = () => {
                         aria-describedby="maquina-help"
                       >
                         <option value="">-- Seleccionar máquina --</option>
-                        {nuevoPlan.alupak_pedido_id && (() => {
+                        {(() => {
+                          // Si no hay pedido seleccionado, mostrar todas las máquinas
+                          if (!nuevoPlan.alupak_pedido_id) {
+                            return Object.values(CONFIG_MAQUINAS).flatMap(config => 
+                              config.maquinas.map(maquina => {
+                                const oee = (oeeMaquinas[maquina] || 0.85) * 100;
+                                const pistas = maquina === 'M4' ? 6 : 12;
+                                return (
+                                  <option key={maquina} value={maquina} className="bg-bg-secondary">
+                                    {maquina} • {pistas} pistas • OEE: {oee.toFixed(0)}% • Cap: {Math.round(config.getCapacidad(maquina, oeeMaquinas[maquina] || 0.85))} u/min
+                                  </option>
+                                );
+                              })
+                            );
+                          }
+
+                          // Si hay pedido seleccionado, filtrar por generación
                           const pedido = pedidos.find(p => p.id === parseInt(nuevoPlan.alupak_pedido_id));
                           if (!pedido) return null;
 
