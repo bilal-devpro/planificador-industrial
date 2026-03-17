@@ -10,7 +10,12 @@ import { X, Save, Settings } from 'lucide-react';
 import { usePlanContext } from '../context/PlanContext';
 import { MAQUINAS } from '../utils/constantes';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Construir URL con /api automáticamente
+const BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.PROD 
+    ? 'https://planificador-industrial-1.onrender.com' 
+    : 'http://localhost:3000');
+const API_URL = BASE_URL + '/api';
 
 export default function ConfiguracionOEE({ onClose = () => {} }) {
   const { setErrores } = usePlanContext();

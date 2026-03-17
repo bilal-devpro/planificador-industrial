@@ -29,9 +29,17 @@ const {
 
 /**
  * POST /api/plan/calcular
- * Calculate production plans for given orders (PREVIEW - no DB save yet)
+ * Calculate production plans - Accepts BOTH formats:
  * 
- * Body:
+ * FORMAT 1 (Simple - from frontend form):
+ * {
+ *   "cantidad_planificada": 1000,
+ *   "maquina_asignada": "M1",
+ *   "fecha_inicio": "2026-03-18",
+ *   "observaciones": "..."
+ * }
+ * 
+ * FORMAT 2 (Complex - from Alupak integration):
  * {
  *   "alupak_pedido_ids": [1, 2, 3],
  *   "maquinas_disponibles": ["M1", "M2", "M3", "M4"],
@@ -43,29 +51,85 @@ const {
  */
 router.post('/calcular', async (req, res) => {
   try {
-    let { alupak_pedido_ids, maquinas_disponibles, usar_stock_disponible, fecha_inicio } = req.body;
+    let { 
+      cantidad_planificada, 
+      maquina_asignada, 
+      observaciones,
+      alupak_pedido_ids, 
+      maquinas_disponibles, 
+      usar_stock_disponible, 
+      fecha_inicio 
+    } = req.body;
 
-    // Validate input
-    if (!alupak_pedido_ids || !Array.isArray(alupak_pedido_ids)) {
+    let pedidos;
+    
+    // DETECT FORMAT: Simple vs Complex
+    if (cantidad_planificada !== undefined) {
+      // FORMAT 1: Simple format from frontend form
+      // Convert to generic order for processing
+      
+      if (!cantidad_planificada || cantidad_planificada <= 0) {
+        return res.status(400).json({
+          success: false,
+          error_type: 'VALIDATION_ERROR',
+          mensaje: 'Cantidad debe ser mayor a 0',
+          campo_afectado: 'cantidad_planificada'
+        });
+      }
+
+      maquina_asignada = maquina_asignada || 'M1';
+      
+      // Create generic order
+      const pedidoGenerico = {
+        id: 0, // Placeholder - will show as generic order
+        no_sales_line: 'AL000-GENERICA', // Generic AL product (G1)
+        qty_pending: parseInt(cantidad_planificada),
+        customer_name: 'Orden Genérica',
+        observaciones: observaciones || 'Orden planificada manualmente'
+      };
+      
+      pedidos = [pedidoGenerico];
+      usar_stock_disponible = false; // No stock checking for generic orders
+
+    } else if (alupak_pedido_ids && Array.isArray(alupak_pedido_ids)) {
+      // FORMAT 2: Complex format from Alupak
+      
+      if (alupak_pedido_ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error_type: 'VALIDATION_ERROR',
+          mensaje: 'Array de pedidos está vacío'
+        });
+      }
+
+      // Fetch orders from Alupak
+      const pedidosResult = await pool.query(`
+        SELECT id, no_sales_line, qty_pending, customer_name
+        FROM alupak_pedidos
+        WHERE id = ANY($1)
+        ORDER BY id DESC
+        LIMIT 1000
+      `, [alupak_pedido_ids]);
+
+      if (pedidosResult.rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error_type: 'VALIDATION_ERROR',
+          mensaje: 'No se encontraron pedidos con los IDs proporcionados'
+        });
+      }
+
+      pedidos = pedidosResult.rows;
+      usar_stock_disponible = usar_stock_disponible !== false;
+
+    } else {
       return res.status(400).json({
         success: false,
         error_type: 'VALIDATION_ERROR',
-        mensaje: 'Se requiere array de alupak_pedido_ids',
-        campo_afectado: 'alupak_pedido_ids'
+        mensaje: 'Se requiere: cantidad_planificada O alupak_pedido_ids',
+        campos: ['cantidad_planificada', 'alupak_pedido_ids']
       });
     }
-
-    if (alupak_pedido_ids.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error_type: 'VALIDATION_ERROR',
-        mensaje: 'Array de pedidos está vacío'
-      });
-    }
-
-    // Default values
-    maquinas_disponibles = maquinas_disponibles || ['M1', 'M2', 'M3', 'M4'];
-    usar_stock_disponible = usar_stock_disponible !== false;
 
     // Parse fecha_inicio
     if (!fecha_inicio) {
@@ -83,22 +147,8 @@ router.post('/calcular', async (req, res) => {
       fecha_inicio = new Date(fNorm);
     }
 
-    // Fetch orders
-    const pedidosResult = await pool.query(`
-      SELECT id, no_sales_line, qty_pending, customer_name
-      FROM alupak_pedidos
-      WHERE id = ANY($1)
-      ORDER BY id DESC
-      LIMIT 1000
-    `, [alupak_pedido_ids]);
-
-    if (pedidosResult.rows.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error_type: 'VALIDATION_ERROR',
-        mensaje: 'No se encontraron pedidos con los IDs proporcionados'
-      });
-    }
+    // Default values
+    maquinas_disponibles = maquinas_disponibles || ['M1', 'M2', 'M3', 'M4'];
 
     // Fetch stock
     let stockResult;
@@ -131,9 +181,9 @@ router.post('/calcular', async (req, res) => {
       oeeMaquinas[maquina] = parseFloat(row.valor) || 0.85;
     }
 
-    // Calculate plans
+    // Calculate plans using intelligent algorithm
     const calculoResult = calcularPlanesProduccion(
-      pedidosResult.rows,
+      pedidos,
       stockResult.rows,
       oeeMaquinas,
       fecha_inicio
