@@ -9,7 +9,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Settings } from 'lucide-react';
 import { usePlanContext } from '../context/PlanContext';
 import { MAQUINAS } from '../utils/constantes';
-import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -29,11 +28,15 @@ export default function ConfiguracionOEE({ onClose = () => {} }) {
     const fetchOEE = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_URL}/maquinas`);
+        const response = await fetch(`${API_URL}/maquinas`);
         
-        if (response.data && Array.isArray(response.data)) {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data && Array.isArray(data)) {
           const nuevoOee = { ...oeeValues };
-          response.data.forEach(maquina => {
+          data.forEach(maquina => {
             if (nuevoOee[maquina.id] !== undefined) {
               nuevoOee[maquina.id] = maquina.oee || 0.85;
             }
@@ -66,9 +69,13 @@ export default function ConfiguracionOEE({ onClose = () => {} }) {
     try {
       setSaving(prev => ({ ...prev, [maquina]: true }));
       
-      await axios.put(`${API_URL}/maquinas/${maquina}/oee`, {
-        oee: numValue
+      const response = await fetch(`${API_URL}/maquinas/${maquina}/oee`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oee: numValue })
       });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       setErrores({ _success: `OEE de ${maquina} actualizado a ${(numValue * 100).toFixed(0)}%` });
     } catch (error) {

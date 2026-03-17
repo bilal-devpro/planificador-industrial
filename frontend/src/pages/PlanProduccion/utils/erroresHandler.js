@@ -7,7 +7,7 @@ import { ERROR_TYPES, MENSAJES_ERROR } from './constantes';
 
 /**
  * Normaliza errores de cualquier origen (API, validación, red)
- * @param {Error|AxiosError|Object} error - Error a normalizar
+ * @param {Error|Object} error - Error a normalizar (desde fetch API o validación)
  * @returns {Object} {code, message, tipo, detalles}
  */
 export const normalizarErrorAPI = (error) => {
@@ -20,7 +20,7 @@ export const normalizarErrorAPI = (error) => {
     };
   }
 
-  // Error de axios/request
+  // Error de HTTP/fetch
   if (error.response) {
     const { status, data } = error.response;
 

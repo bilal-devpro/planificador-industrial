@@ -1,12 +1,12 @@
 /**
  * Custom hook para operaciones de API (Plan de Producción)
  * Centraliza: fetch, create, update, delete
+ * Usa fetch API nativo (sin dependencias externas)
  */
 
 import { useState, useCallback } from 'react';
 import { usePlanContext } from '../context/PlanContext';
 import { normalizarErrorAPI, mapearCodigoError } from '../utils/erroresHandler';
-import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -26,12 +26,18 @@ export function usePlanesProduccion() {
       setLoading(true);
       context.setLoading(true);
 
-      const response = await axios.get(
-        `${API_URL}/plan/historial`,
-        { params: { pagina, limite: 20 } }
-      );
+      const url = new URL(`${API_URL}/plan/historial`);
+      url.searchParams.append('pagina', pagina);
+      url.searchParams.append('limite', 20);
 
-      const { planes = [], pagina_actual = 1, total_paginas = 1, total_registros = 0 } = response.data;
+      const response = await fetch(url.toString());
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const { planes = [], pagina_actual = 1, total_paginas = 1, total_registros = 0 } = data;
 
       context.setPlanes(planes);
       context.setPagination({
@@ -62,27 +68,41 @@ export function usePlanesProduccion() {
       context.clearErrores();
 
       // Step 1: Calcular (preview)
-      const calcularResponse = await axios.post(
-        `${API_URL}/plan/calcular`,
-        datosFormulario
-      );
+      const calcularResponse = await fetch(`${API_URL}/plan/calcular`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosFormulario)
+      });
 
-      if (!calcularResponse.data.planes || calcularResponse.data.planes.length === 0) {
+      if (!calcularResponse.ok) {
+        throw new Error(`HTTP ${calcularResponse.status}`);
+      }
+
+      const calcularData = await calcularResponse.json();
+
+      if (!calcularData.planes || calcularData.planes.length === 0) {
         throw new Error('No se pudieron generar planes');
       }
 
       // Step 2: Guardar
-      const planesAGuardar = calcularResponse.data.planes;
-      const guardarResponse = await axios.post(
-        `${API_URL}/plan/guardar`,
-        { planes: planesAGuardar }
-      );
+      const planesAGuardar = calcularData.planes;
+      const guardarResponse = await fetch(`${API_URL}/plan/guardar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planes: planesAGuardar })
+      });
 
-      if (guardarResponse.data.ids_guardados) {
+      if (!guardarResponse.ok) {
+        throw new Error(`HTTP ${guardarResponse.status}`);
+      }
+
+      const guardarData = await guardarResponse.json();
+
+      if (guardarData.ids_guardados) {
         // Agregar los nuevos planes al contexto
         planesAGuardar.forEach(plan => context.addPlan(plan));
         context.setErrores({ _success: 'Plan creado exitosamente' });
-        return { success: true, ids: guardarResponse.data.ids_guardados };
+        return { success: true, ids: guardarData.ids_guardados };
       }
 
       throw new Error('No se guardaron los planes');
@@ -103,12 +123,19 @@ export function usePlanesProduccion() {
   const editarPlan = useCallback(async (idPlan, cambios) => {
     try {
       setLoading(true);
-      const response = await axios.put(
-        `${API_URL}/plan/${idPlan}/editar`,
-        cambios
-      );
+      const response = await fetch(`${API_URL}/plan/${idPlan}/editar`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cambios)
+      });
 
-      if (response.data.success) {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
         context.updatePlan({ id: idPlan, ...cambios });
         context.setErrores({ _success: 'Plan actualizado' });
         return { success: true };
@@ -130,11 +157,17 @@ export function usePlanesProduccion() {
    */
   const marcarCompleto = useCallback(async (idPlan) => {
     try {
-      const response = await axios.put(
-        `${API_URL}/plan/${idPlan}/marcar-completado`
-      );
+      const response = await fetch(`${API_URL}/plan/${idPlan}/marcar-completado`, {
+        method: 'PUT'
+      });
 
-      if (response.data.success) {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
         context.updatePlan({ id: idPlan, estado_finalizado: true });
         return { success: true };
       }
@@ -156,11 +189,17 @@ export function usePlanesProduccion() {
         return { success: false, cancelled: true };
       }
 
-      const response = await axios.delete(
-        `${API_URL}/plan/${idPlan}`
-      );
+      const response = await fetch(`${API_URL}/plan/${idPlan}`, {
+        method: 'DELETE'
+      });
 
-      if (response.data.success) {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
         context.deletePlan(idPlan);
         context.setErrores({ _success: 'Plan eliminado' });
         return { success: true };
