@@ -818,9 +818,12 @@ const PlanProduccion = () => {
       resumen: `Editado: ${cambiosDetallados.map(c => c.campo).join(', ')}`
     });
 
-    // Guardar en base de datos
+    // Guardar en base de datos - CORREGIDO: usar el ID correcto
     try {
-      const response = await fetch(`${API}/api/plan/produccion/${rowId}`, {
+      // Extraer el ID numérico del rowId (eliminar el prefijo "plan-")
+      const planId = rowId.replace('plan-', '');
+      
+      const response = await fetch(`${API}/api/plan/produccion/${planId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedRow)
