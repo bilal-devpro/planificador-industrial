@@ -818,15 +818,17 @@ const PlanProduccion = () => {
       resumen: `Editado: ${cambiosDetallados.map(c => c.campo).join(', ')}`
     });
 
-    // Guardar en base de datos - CORREGIDO: usar el endpoint correcto
+    // Guardar en base de datos - NUEVO ENDPOINT UNIVERSAL
     try {
       // Extraer el ID numérico del rowId (eliminar el prefijo "plan-")
       const planId = rowId.replace('plan-', '');
       
-      const response = await fetch(`${API}/api/plan/${planId}/editar`, {
-        method: 'PUT',
+      const response = await fetch(`${API}/api/produccion/plan`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: planId, // ID opcional para actualización
+          alupak_pedido_id: updatedRow.alupak_pedido_id,
           cantidad_planificada: updatedRow.cantidad_planificada,
           maquina_asignada: updatedRow.maquina_asignada,
           fecha_inicio: updatedRow.fecha_inicio,
