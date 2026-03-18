@@ -818,15 +818,23 @@ const PlanProduccion = () => {
       resumen: `Editado: ${cambiosDetallados.map(c => c.campo).join(', ')}`
     });
 
-    // Guardar en base de datos - CORREGIDO: usar el ID correcto
+    // Guardar en base de datos - CORREGIDO: usar el endpoint correcto
     try {
       // Extraer el ID numérico del rowId (eliminar el prefijo "plan-")
       const planId = rowId.replace('plan-', '');
       
-      const response = await fetch(`${API}/api/plan/produccion/${planId}`, {
+      const response = await fetch(`${API}/api/plan/${planId}/editar`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedRow)
+        body: JSON.stringify({
+          cantidad_planificada: updatedRow.cantidad_planificada,
+          maquina_asignada: updatedRow.maquina_asignada,
+          fecha_inicio: updatedRow.fecha_inicio,
+          fecha_fin: updatedRow.fecha_fin,
+          estado: updatedRow.estado,
+          observaciones: updatedRow.observaciones,
+          oee_aplicado: updatedRow.oee_aplicado
+        })
       });
 
       if (response.ok) {
