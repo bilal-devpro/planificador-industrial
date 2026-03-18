@@ -844,7 +844,9 @@ const PlanProduccion = () => {
         window.dispatchEvent(new Event('planUpdated'));
         console.log('✅ Cambios guardados exitosamente en base de datos');
       } else {
-        throw new Error('Error al guardar en base de datos');
+        const errorData = await response.json();
+        console.error('❌ Error del servidor:', errorData);
+        throw new Error(`Error al guardar en base de datos: ${errorData.mensaje || response.statusText}`);
       }
     } catch (error) {
       console.error('Error guardando en base de datos:', error);

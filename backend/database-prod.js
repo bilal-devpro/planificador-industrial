@@ -1,20 +1,53 @@
 require('dotenv').config();
 const { Pool } = require('pg');
-const dbConfig = require('./database-prod');
 
-// Configurar pool de conexiones PostgreSQL
-const pool = dbConfig.pool;
+// Configuración profesional para PostgreSQL en Render.com
+const dbConfig = {
+  host: 'dpg-d6ntf495pdvs73ftn54g-a.oregon-postgres.render.com',
+  port: 5432,
+  database: 'planificador_db_j33z',
+  user: 'planificador_db_j33z_user',  // Usuario correcto según los logs
+  password: 'scNosIHVNoqalO6JGeF2pZJz36C5gPdt',
+  ssl: {
+    require: true,
+    rejectUnauthorized: false  // Necesario para Render.com
+  },
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  max: 20 // Máximo número de conexiones en el pool
+};
 
-// Exportar la función de prueba de conexión
-const testConnection = dbConfig.testConnection;
+// Crear pool de conexiones
+const pool = new Pool(dbConfig);
 
-// Exportar la función de inicialización
-const initDatabase = dbConfig.initDatabase;
+// Manejo de errores de conexión
+pool.on('error', (err) => {
+  console.error('❌ Error inesperado en la conexión PostgreSQL:', err);
+});
+
+// Función para probar la conexión
+async function testConnection() {
+  try {
+    const client = await pool.connect();
+    console.log('✅ Conexión PostgreSQL exitosa');
+    client.release();
+    return true;
+  } catch (error) {
+    console.error('❌ Error de conexión PostgreSQL:', error.message);
+    return false;
+  }
+}
 
 // Inicializar base de datos
 async function initDatabase() {
   try {
     console.log('🔧 Inicializando base de datos PostgreSQL...');
+
+    // Probar conexión primero
+    const connected = await testConnection();
+    if (!connected) {
+      throw new Error('No se pudo conectar a PostgreSQL');
+    }
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS alupak_pedidos (
@@ -119,7 +152,7 @@ async function initDatabase() {
       ON CONFLICT (clave) DO NOTHING;
     `);
 
-    console.log('✅ Base de datos PostgreSQL inicializada');
+    console.log('✅ Base de datos PostgreSQL inicializada correctamente');
     return pool;
 
   } catch (error) {
@@ -285,5 +318,6 @@ module.exports = {
   guardarInventarioFisico,
   obtenerHistorialImportaciones,
   obtenerDatosGuardados,
-  extraerInfoOFLote
+  extraerInfoOFLote,
+  testConnection
 };
