@@ -2245,7 +2245,7 @@ const PlanProduccion = () => {
                       return;
                     }
 
-                    if (!nuevoPlan.cantidad_planificada || parseInt(nuevoPlan.cantidad_planificada) <= 0) {
+                    if (!nuevoPlan.cantidad || parseInt(nuevoPlan.cantidad) <= 0) {
                       alert('⚠️ Ingresa una cantidad válida mayor a 0');
                       return;
                     }
@@ -2255,13 +2255,13 @@ const PlanProduccion = () => {
                       return;
                     }
 
-                    if (!nuevoPlan.fecha_inicio) {
-                      alert('⚠️ Selecciona una fecha de inicio');
+                    if (!nuevoPlan.oee_linea) {
+                      alert('⚠️ Ingresa un valor de OEE válido');
                       return;
                     }
 
-                    if (!nuevoPlan.fecha_fin) {
-                      alert('⚠️ Calcula primero la fecha de fin estimada');
+                    if (!nuevoPlan.disponibilidad_linea) {
+                      alert('⚠️ Selecciona una fecha de disponibilidad');
                       return;
                     }
 
