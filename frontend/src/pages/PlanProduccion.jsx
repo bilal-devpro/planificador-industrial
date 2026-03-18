@@ -1208,7 +1208,7 @@ const PlanProduccion = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {datosFiltradosYOrdenados.length === 0 ? (
+                  {datosPaginados.length === 0 ? (
                     <tr>
                       <td colSpan="14" className="text-center py-12 text-secondary">
                         <Factory size={48} className="mx-auto mb-4 text-gray-600" />
@@ -1217,7 +1217,7 @@ const PlanProduccion = () => {
                       </td>
                     </tr>
                   ) : (
-                    datosFiltradosYOrdenados.map((orden) => {
+                    datosPaginados.map((orden) => {
                       const cajasPendientes = orden.unidades_por_caja > 0
                         ? Math.ceil(orden.cantidad_pendiente / orden.unidades_por_caja)
                         : 0;
