@@ -544,6 +544,10 @@ const PlanProduccion = () => {
     }));
   };
 
+  // Estados para paginación
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [itemsPorPagina, setItemsPorPagina] = useState(50);
+
   // Ordenar y filtrar datos
   const datosFiltradosYOrdenados = useMemo(() => {
     let datos = [...planManual];
@@ -590,6 +594,52 @@ const PlanProduccion = () => {
 
     return datos;
   }, [planManual, filtros, orden]);
+
+  // Calcular datos paginados
+  const datosPaginados = useMemo(() => {
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    return datosFiltradosYOrdenados.slice(inicio, fin);
+  }, [datosFiltradosYOrdenados, paginaActual, itemsPorPagina]);
+
+  // Calcular total de páginas
+  const totalPages = Math.ceil(datosFiltradosYOrdenados.length / itemsPorPagina);
+
+  // Manejar cambio de página
+  const handlePageChange = (pagina) => {
+    setPaginaActual(pagina);
+  };
+
+  // Manejar cambio de items por página
+  const handleItemsPerPageChange = (cantidad) => {
+    setItemsPorPagina(cantidad);
+    setPaginaActual(1); // Resetear a la primera página
+  };
+
+  // Generar páginas para el paginador
+  const generarPaginas = () => {
+    const paginas = [];
+    const rango = 2; // Mostrar 2 páginas antes y después de la actual
+    
+    let inicio = Math.max(1, paginaActual - rango);
+    let fin = Math.min(totalPages, paginaActual + rango);
+    
+    // Ajustar el inicio si estamos cerca del final
+    if (fin - inicio < rango * 2) {
+      inicio = Math.max(1, fin - rango * 2);
+    }
+    
+    // Ajustar el fin si estamos cerca del inicio
+    if (fin - inicio < rango * 2) {
+      fin = Math.min(totalPages, inicio + rango * 2);
+    }
+
+    for (let i = inicio; i <= fin; i++) {
+      paginas.push(i);
+    }
+    
+    return paginas;
+  };
 
   // Calcular resumen del plan
   const calcularResumenPlan = () => {
@@ -1372,6 +1422,78 @@ const PlanProduccion = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Paginador */}
+            <div className="mt-4 py-3 border-t border-border-color flex flex-col md:flex-row justify-between items-center gap-4">
+              {/* Controles de paginación */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => handlePageChange(1)}
+                  disabled={paginaActual === 1}
+                  className={`btn btn-xs px-3 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none ${paginaActual === 1 ? 'opacity-50 cursor-not-allowed' : 'btn-primary'}`}
+                  aria-label="Primera página"
+                >
+                  <ChevronUp size={14} aria-hidden="true" />
+                </button>
+                <button
+                  onClick={() => handlePageChange(paginaActual - 1)}
+                  disabled={paginaActual === 1}
+                  className={`btn btn-xs px-3 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none ${paginaActual === 1 ? 'opacity-50 cursor-not-allowed' : 'btn-primary'}`}
+                  aria-label="Página anterior"
+                >
+                  <ChevronUp size={14} aria-hidden="true" />
+                </button>
+                
+                {/* Números de página */}
+                {generarPaginas().map((pagina) => (
+                  <button
+                    key={pagina}
+                    onClick={() => handlePageChange(pagina)}
+                    className={`btn btn-xs px-3 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none ${pagina === paginaActual ? 'btn-primary' : 'btn-secondary'}`}
+                    aria-label={`Página ${pagina}`}
+                  >
+                    {pagina}
+                  </button>
+                ))}
+                
+                <button
+                  onClick={() => handlePageChange(paginaActual + 1)}
+                  disabled={paginaActual === totalPages}
+                  className={`btn btn-xs px-3 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none ${paginaActual === totalPages ? 'opacity-50 cursor-not-allowed' : 'btn-primary'}`}
+                  aria-label="Página siguiente"
+                >
+                  <ChevronDown size={14} aria-hidden="true" />
+                </button>
+                <button
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={paginaActual === totalPages}
+                  className={`btn btn-xs px-3 py-2 min-h-[36px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none ${paginaActual === totalPages ? 'opacity-50 cursor-not-allowed' : 'btn-primary'}`}
+                  aria-label="Última página"
+                >
+                  <ChevronDown size={14} aria-hidden="true" />
+                </button>
+              </div>
+
+              {/* Controles de items por página */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-secondary">Mostrar:</span>
+                <select
+                  value={itemsPorPagina}
+                  onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
+                  className="form-control text-sm py-2 px-3 min-h-[36px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                  aria-label="Items por página"
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                </select>
+                <span className="text-sm text-secondary ml-2">
+                  Página {paginaActual} de {totalPages} • 
+                  Mostrando {datosPaginados.length} de {datosFiltradosYOrdenados.length} órdenes
+                </span>
+              </div>
             </div>
 
             {/* Resumen de resultados filtrados */}
