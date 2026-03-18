@@ -23,7 +23,10 @@ router.post('/plan', async (req, res) => {
 
     // Si es actualización, validar que el plan exista
     if (id) {
-      const planResult = await pool.query('SELECT * FROM planes_produccion WHERE id = $1', [id]);
+      // El frontend envía IDs como "plan-123", pero la base de datos tiene IDs numéricos
+      const planId = id.startsWith('plan-') ? id.replace('plan-', '') : id;
+      
+      const planResult = await pool.query('SELECT * FROM planes_produccion WHERE id = $1', [planId]);
       if (planResult.rows.length === 0) {
         return res.status(404).json({
           success: false,
