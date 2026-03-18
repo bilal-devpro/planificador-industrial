@@ -1763,23 +1763,24 @@ const PlanProduccion = () => {
             </div>
 
             <div className="space-y-6">
-              {/* Paso 1: Selección de Producto */}
+              {/* Paso 1: Selección de Pedido ALUPAK */}
               <div className="space-y-2">
-                <label className="form-label flex items-center gap-2" htmlFor="producto-select">
+                <label className="form-label flex items-center gap-2" htmlFor="pedido-select">
                   <Package size={18} className="text-purple-400" aria-hidden="true" />
-                  Producto <span className="text-red-400">*</span>
+                  Pedido ALUPAK <span className="text-red-400">*</span>
                 </label>
 
                 <div className="relative">
                   <select
-                    id="producto-select"
+                    id="pedido-select"
                     className="form-control pr-10 py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
-                    value={nuevoPlan.producto}
+                    value={nuevoPlan.alupak_pedido_id}
                     onChange={(e) => {
-                      const producto = e.target.value;
-                      if (!producto) {
+                      const pedidoId = e.target.value;
+                      if (!pedidoId) {
                         setNuevoPlan(prev => ({
                           ...prev,
+                          alupak_pedido_id: '',
                           producto: '',
                           generacion: '',
                           velocidad_produccion: 0,
@@ -1790,9 +1791,13 @@ const PlanProduccion = () => {
                         return;
                       }
 
+                      // Obtener datos del pedido seleccionado
+                      const pedidoSeleccionado = pedidos.find(p => p.id === parseInt(pedidoId));
+                      if (!pedidoSeleccionado) return;
+
                       // Determinar generación y velocidad de producción
-                      const esG1 = producto.startsWith('AL');
-                      const esG2 = producto.startsWith('AC');
+                      const esG1 = pedidoSeleccionado.no_sales_line.startsWith('AL');
+                      const esG2 = pedidoSeleccionado.no_sales_line.startsWith('AC');
                       const generacion = esG1 ? 'G1' : (esG2 ? 'G2' : 'G1');
                       const velocidad = esG1 ? 16380 : 15600; // unidades por caja
 
@@ -1802,30 +1807,36 @@ const PlanProduccion = () => {
 
                       setNuevoPlan(prev => ({
                         ...prev,
-                        producto: producto,
+                        alupak_pedido_id: pedidoId,
+                        producto: pedidoSeleccionado.no_sales_line,
                         generacion: generacion,
                         velocidad_produccion: velocidad,
                         maquina_asignada: maquinaDefault
                       }));
                     }}
                     required
-                    aria-describedby="producto-help"
+                    aria-describedby="pedido-help"
                   >
-                    <option value="">-- Seleccionar producto --</option>
-                    <option value="AL001">AL001 - Producto Generación 1 (16,380 u/caja)</option>
-                    <option value="AL002">AL002 - Producto Generación 1 (16,380 u/caja)</option>
-                    <option value="AC001">AC001 - Producto Generación 2 (15,600 u/caja)</option>
-                    <option value="AC002">AC002 - Producto Generación 2 (15,600 u/caja)</option>
+                    <option value="">-- Seleccionar pedido --</option>
+                    {pedidos.map(pedido => (
+                      <option key={pedido.id} value={pedido.id}>
+                        {pedido.no_sales_line} - {pedido.customer_name} (Pendiente: {pedido.qty_pending.toLocaleString()})
+                      </option>
+                    ))}
                   </select>
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-secondary">
                     <ChevronDown size={18} aria-hidden="true" />
                   </div>
-                  <div id="producto-help" className="sr-only">Selecciona el producto a producir</div>
+                  <div id="pedido-help" className="sr-only">Selecciona el pedido ALUPAK para crear la orden de producción</div>
                 </div>
 
-                {nuevoPlan.producto && (
+                {nuevoPlan.alupak_pedido_id && (
                   <div className="mt-2 p-3 bg-bg-secondary rounded-lg text-sm">
                     <div className="flex justify-between">
+                      <span className="text-secondary">Producto:</span>
+                      <span className="font-medium">{nuevoPlan.producto}</span>
+                    </div>
+                    <div className="flex justify-between mt-1">
                       <span className="text-secondary">Generación:</span>
                       <span className="font-medium">{nuevoPlan.generacion}</span>
                     </div>
