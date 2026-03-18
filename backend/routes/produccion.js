@@ -13,12 +13,45 @@ router.post('/plan', async (req, res) => {
     const { id, alupak_pedido_id, cantidad_planificada, maquina_asignada, fecha_inicio, fecha_fin, estado, observaciones, oee_aplicado } = req.body;
 
     // Validar datos básicos
-    if (!alupak_pedido_id || !cantidad_planificada || !maquina_asignada || !fecha_inicio) {
+    if (!cantidad_planificada || !maquina_asignada || !fecha_inicio) {
       return res.status(400).json({
         success: false,
         error_type: 'VALIDATION_ERROR',
-        mensaje: 'Faltan campos requeridos: alupak_pedido_id, cantidad_planificada, maquina_asignada, fecha_inicio'
+        mensaje: 'Faltan campos requeridos: cantidad_planificada, maquina_asignada, fecha_inicio'
       });
+    }
+
+    // Si es actualización, validar que el plan exista
+    if (id) {
+      const planResult = await pool.query('SELECT * FROM planes_produccion WHERE id = $1', [id]);
+      if (planResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error_type: 'NOT_FOUND',
+          mensaje: 'Plan no encontrado'
+        });
+      }
+    }
+
+    // Si es creación, validar que el pedido exista
+    if (!id && !alupak_pedido_id) {
+      return res.status(400).json({
+        success: false,
+        error_type: 'VALIDATION_ERROR',
+        mensaje: 'Falta campo requerido: alupak_pedido_id (para creación de plan)'
+      });
+    }
+
+    if (alupak_pedido_id) {
+      const pedidoResult = await pool.query('SELECT id FROM alupak_pedidos WHERE id = $1', [alupak_pedido_id]);
+      if (pedidoResult.rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error_type: 'VALIDATION_ERROR',
+          mensaje: 'Pedido no encontrado',
+          campo_afectado: 'alupak_pedido_id'
+        });
+      }
     }
 
     // Normalizar fechas
