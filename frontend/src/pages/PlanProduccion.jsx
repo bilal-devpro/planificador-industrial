@@ -777,7 +777,7 @@ const PlanProduccion = () => {
   };
 
   // ✅ GUARDAR CAMBIOS CON HISTORIAL Y SINCRONIZACIÓN
-  const handleSave = (rowId) => {
+  const handleSave = async (rowId) => {
     const row = planManual.find(r => r.id === rowId);
     if (!row) return;
 
@@ -799,21 +799,45 @@ const PlanProduccion = () => {
       oee_aplicado: oeeMaquina
     };
 
-    const nuevoPlan = planManual.map(row => row.id === rowId ? updatedRow : row);
+    const nuevoPlan = planManual.map(r => r.id === rowId ? updatedRow : r);
     setPlanManual(nuevoPlan);
     setEditingRow(null);
     setFormData({});
 
+    // Guardar en historial con detalles completos
+    const cambiosDetallados = Object.keys(formData).filter(k => formData[k] !== row[k]).map(k => ({
+      campo: k,
+      valorAnterior: row[k],
+      valorNuevo: formData[k]
+    }));
+
     guardarEnHistorial(nuevoPlan, 'edicion_manual', {
       pedido: row.no_sales_line,
-      cambios: Object.keys(formData).filter(k => formData[k] !== row[k])
+      cliente: row.customer_name,
+      cambios: cambiosDetallados,
+      resumen: `Editado: ${cambiosDetallados.map(c => c.campo).join(', ')}`
     });
 
-    window.dispatchEvent(new Event('planUpdated'));
+    // Guardar en base de datos
+    try {
+      const response = await fetch(`${API}/api/plan/produccion/${rowId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedRow)
+      });
 
-    setTimeout(() => {
-      console.log('💾 Cambios guardados en base de datos:', updatedRow);
-    }, 300);
+      if (response.ok) {
+        // Notificar a otros componentes
+        window.dispatchEvent(new Event('planUpdated'));
+        console.log('✅ Cambios guardados exitosamente en base de datos');
+      } else {
+        throw new Error('Error al guardar en base de datos');
+      }
+    } catch (error) {
+      console.error('Error guardando en base de datos:', error);
+      // Aún así mostramos el cambio localmente
+      window.dispatchEvent(new Event('planUpdated'));
+    }
   };
 
   // Funciones para mostrar información
@@ -2457,9 +2481,9 @@ const PlanProduccion = () => {
                 </div>
               </div>
 
-              {/* Lista de cambios */}
+              {/* Lista de cambios - Mejorada y más detallada */}
               <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                {historialCambios.map((cambio, index) => {
+                {historialCambios.slice().reverse().map((cambio, index) => {
                   const isActive = index === indiceHistorial;
                   const isPast = index < indiceHistorial;
                   const isFuture = index > indiceHistorial;
@@ -2468,83 +2492,192 @@ const PlanProduccion = () => {
                   const accionSegura = cambio.accion || 'carga_inicial';
                   const accionFormateada = accionSegura.replace(/_/g, ' ');
 
+                  // Determinar icono y colores según el tipo de acción
+                  const getActionConfig = (accion) => {
+                    switch (accion) {
+                      case 'nueva_orden':
+                        return {
+                          icon: <Plus size={20} className="text-green-400" />,
+                          bg: 'bg-green-900/20',
+                          border: 'border-green-500',
+                          text: 'text-green-400'
+                        };
+                      case 'edicion_manual':
+                        return {
+                          icon: <Edit2 size={20} className="text-blue-400" />,
+                          bg: 'bg-blue-900/20',
+                          border: 'border-blue-500',
+                          text: 'text-blue-400'
+                        };
+                      case 'cambio_maquina':
+                        return {
+                          icon: <Cpu size={20} className="text-purple-400" />,
+                          bg: 'bg-purple-900/20',
+                          border: 'border-purple-500',
+                          text: 'text-purple-400'
+                        };
+                      case 'recarga_datos':
+                        return {
+                          icon: <RefreshCw size={20} className="text-yellow-400" />,
+                          bg: 'bg-yellow-900/20',
+                          border: 'border-yellow-500',
+                          text: 'text-yellow-400'
+                        };
+                      default:
+                        return {
+                          icon: <Database size={20} className="text-gray-400" />,
+                          bg: 'bg-gray-900/20',
+                          border: 'border-gray-500',
+                          text: 'text-gray-400'
+                        };
+                    }
+                  };
+
+                  const config = getActionConfig(cambio.accion);
+
                   return (
                     <div
                       key={index}
-                      className={`border border-border-color rounded-lg p-4 transition-all ${isActive
-                          ? 'border-blue-500 bg-blue-900/20 shadow-lg scale-[1.02]'
+                      className={`border rounded-lg p-4 transition-all duration-300 hover:shadow-md ${
+                        isActive
+                          ? `${config.border} ${config.bg} shadow-lg scale-[1.02] ring-2 ring-blue-400/50`
                           : isPast
                             ? 'border-green-800/50 bg-green-900/10'
                             : isFuture
                               ? 'border-purple-800/50 bg-purple-900/10 opacity-70'
                               : 'border-border-color hover:border-blue-800/50'
-                        }`}
+                      }`}
                     >
-                      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
+                      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+                        {/* Información principal */}
                         <div className="flex-1">
-                          <div className="flex items-start gap-3">
-                            <div className={`p-2 rounded-lg ${cambio.accion === 'cambio_maquina' ? 'bg-purple-900/30' :
-                                cambio.accion === 'edicion_manual' ? 'bg-blue-900/30' :
-                                  cambio.accion === 'nueva_orden' ? 'bg-green-900/30' :
-                                    cambio.accion === 'recarga_datos' ? 'bg-gray-800' :
-                                      'bg-gray-800'
-                              }`}>
-                              {cambio.accion === 'cambio_maquina' && <ArrowLeftRight size={20} className="text-purple-400" />}
-                              {cambio.accion === 'edicion_manual' && <Edit2 size={20} className="text-blue-400" />}
-                              {cambio.accion === 'nueva_orden' && <Plus size={20} className="text-green-400" />}
-                              {cambio.accion === 'recarga_datos' && <RefreshCw size={20} className="text-yellow-400" />}
-                              {!cambio.accion && <Database size={20} className="text-gray-400" />}
+                          <div className="flex items-start gap-4">
+                            {/* Icono de acción */}
+                            <div className={`p-3 rounded-lg ${config.bg} border ${config.border}`}>
+                              {config.icon}
                             </div>
-                            <div>
-                              <div className="font-bold flex items-center gap-2">
-                                {/* ✅ USAR VALOR FORMATEADO CON PROTECCIÓN */}
-                                {accionFormateada}
-                                {isActive && (
-                                  <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded flex items-center gap-1">
-                                    <Lock size={12} />
-                                    Estado Actual
-                                  </span>
-                                )}
+                            
+                            {/* Detalles del cambio */}
+                            <div className="flex-1">
+                              {/* Encabezado con acción y estado */}
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                  <h4 className={`font-bold text-lg ${config.text}`}>
+                                    {accionFormateada}
+                                  </h4>
+                                  {isActive && (
+                                    <span className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-medium">
+                                      <Lock size={14} />
+                                      Estado Actual
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-secondary">
+                                  {new Date(cambio.timestamp).toLocaleString('es-ES', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </div>
                               </div>
-                              <div className="text-sm text-secondary mt-1">
+
+                              {/* Detalles específicos */}
+                              <div className="space-y-3">
+                                {/* Pedido y cliente */}
                                 {cambio.detalles?.pedido && (
-                                  <div>{cambio.detalles.pedido}</div>
-                                )}
-                                {cambio.detalles?.maquina_original && (
-                                  <div>
-                                    {cambio.detalles.maquina_original} → {cambio.detalles.maquina_nueva}
+                                  <div className="bg-bg-secondary rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Package size={14} className="text-purple-400" />
+                                      <span className="font-medium text-sm">Pedido:</span>
+                                    </div>
+                                    <div className="text-sm">
+                                      <span className="font-mono">{cambio.detalles.pedido}</span>
+                                      {cambio.detalles.cliente && (
+                                        <span className="text-secondary ml-2">• {cambio.detalles.cliente}</span>
+                                      )}
+                                    </div>
                                   </div>
                                 )}
+
+                                {/* Cambios detallados */}
                                 {cambio.detalles?.cambios && Array.isArray(cambio.detalles.cambios) && (
-                                  <div>
-                                    {cambio.detalles.cambios.map((c, i) => (
-                                      <span key={i} className="inline-block bg-gray-800 px-1.5 py-0.5 rounded text-xs mr-1 mb-1">
-                                        {c}
-                                      </span>
-                                    ))}
+                                  <div className="bg-bg-secondary rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Edit2 size={14} className="text-blue-400" />
+                                      <span className="font-medium text-sm">Cambios realizados:</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                      {cambio.detalles.cambios.map((cambioDet, i) => (
+                                        <div key={i} className="bg-bg-primary rounded p-2 border border-border-color">
+                                          <div className="flex items-center justify-between mb-1">
+                                            <span className="text-xs font-medium text-secondary">Campo:</span>
+                                            <span className="text-xs font-mono bg-gray-800 px-2 py-1 rounded">{cambioDet.campo}</span>
+                                          </div>
+                                          <div className="flex items-center justify-between text-sm">
+                                            <span className="text-xs text-secondary">Antes:</span>
+                                            <span className="font-mono bg-red-900/20 text-red-400 px-2 py-1 rounded text-xs">
+                                              {cambioDet.valorAnterior || 'vacío'}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center justify-between text-sm mt-1">
+                                            <span className="text-xs text-secondary">Después:</span>
+                                            <span className="font-mono bg-green-900/20 text-green-400 px-2 py-1 rounded text-xs">
+                                              {cambioDet.valorNuevo || 'vacío'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
+
+                                {/* Resumen rápido */}
+                                {cambio.detalles?.resumen && (
+                                  <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Info size={14} className="text-blue-400" />
+                                      <span className="font-medium text-sm">Resumen:</span>
+                                    </div>
+                                    <div className="text-sm text-blue-300">
+                                      {cambio.detalles.resumen}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Mensaje adicional */}
                                 {cambio.detalles?.mensaje && (
-                                  <div className="italic text-xs">{cambio.detalles.mensaje}</div>
+                                  <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <AlertCircle size={14} className="text-yellow-400" />
+                                      <span className="font-medium text-sm">Nota:</span>
+                                    </div>
+                                    <div className="text-sm italic">
+                                      {cambio.detalles.mensaje}
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex flex-col items-end gap-2 min-w-[150px]">
-                          <div className="text-xs text-secondary whitespace-nowrap">
-                            {new Date(cambio.timestamp).toLocaleString('es-ES', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: '2-digit',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              second: '2-digit'
-                            })}
+                        {/* Controles de navegación */}
+                        <div className="flex flex-col items-end gap-3 min-w-[180px]">
+                          {/* Información de estado */}
+                          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            isActive ? 'bg-blue-500/20 text-blue-400' :
+                            isPast ? 'bg-green-500/20 text-green-400' :
+                            isFuture ? 'bg-purple-500/20 text-purple-400' :
+                            'bg-gray-500/20 text-gray-400'
+                          }`}>
+                            {isActive ? 'Estado Actual' : isPast ? 'Historial' : 'Futuro'}
                           </div>
-                          <div className="flex gap-2">
-                            {!isActive && (
+
+                          {/* Botones de navegación */}
+                          {!isActive && (
+                            <div className="flex gap-2">
                               <button
                                 onClick={() => {
                                   if (index < indiceHistorial) {
@@ -2563,23 +2696,31 @@ const PlanProduccion = () => {
                                     }
                                   }
                                 }}
-                                className={`btn btn-xs ${index < indiceHistorial ? 'btn-primary' : 'btn-secondary'
-                                  }`}
+                                className={`btn btn-xs px-3 py-2 flex items-center gap-2 transition-all duration-200 ${
+                                  index < indiceHistorial 
+                                    ? 'btn-primary hover:scale-105' 
+                                    : 'btn-secondary hover:scale-105'
+                                }`}
                                 title={index < indiceHistorial ? 'Volver a este estado' : 'Avanzar a este estado'}
                               >
                                 {index < indiceHistorial ? (
                                   <>
-                                    <Undo size={14} className="mr-1" />
+                                    <Undo size={14} />
                                     Volver
                                   </>
                                 ) : (
                                   <>
-                                    <Redo size={14} className="mr-1" />
+                                    <Redo size={14} />
                                     Avanzar
                                   </>
                                 )}
                               </button>
-                            )}
+                            </div>
+                          )}
+
+                          {/* Indicador de posición */}
+                          <div className="text-xs text-secondary font-mono">
+                            Estado #{historialCambios.length - index} de {historialCambios.length}
                           </div>
                         </div>
                       </div>
