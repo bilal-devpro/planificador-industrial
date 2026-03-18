@@ -1919,14 +1919,18 @@ const PlanProduccion = () => {
                         value={nuevoPlan.cantidad}
                         onChange={(e) => {
                           const valor = e.target.value;
-                          setNuevoPlan(prev => ({ ...prev, cantidad: valor }));
-                          
-                          // Calcular tiempo estimado basado en capacidad de la máquina
-                          if (valor && prev.velocidad_produccion && prev.oee_linea && prev.maquina_asignada && prev.generacion) {
-                            const capacidadPorMinuto = CONFIG_MAQUINAS[prev.generacion].getCapacidad(prev.maquina_asignada, prev.oee_linea);
-                            const tiempoMinutos = Math.ceil(parseInt(valor) / capacidadPorMinuto);
-                            setNuevoPlan(prev => ({ ...prev, tiempo_estimado: tiempoMinutos }));
-                          }
+                          setNuevoPlan(prev => {
+                            const nuevoPlan = { ...prev, cantidad: valor };
+                            
+                            // Calcular tiempo estimado basado en capacidad de la máquina
+                            if (valor && nuevoPlan.velocidad_produccion && nuevoPlan.oee_linea && nuevoPlan.maquina_asignada && nuevoPlan.generacion) {
+                              const capacidadPorMinuto = CONFIG_MAQUINAS[nuevoPlan.generacion].getCapacidad(nuevoPlan.maquina_asignada, nuevoPlan.oee_linea);
+                              const tiempoMinutos = Math.ceil(parseInt(valor) / capacidadPorMinuto);
+                              nuevoPlan.tiempo_estimado = tiempoMinutos;
+                            }
+                            
+                            return nuevoPlan;
+                          });
                         }}
                         min="1"
                         placeholder="Ej: 50000"
@@ -1957,22 +1961,26 @@ const PlanProduccion = () => {
                         value={nuevoPlan.maquina_asignada}
                         onChange={(e) => {
                           const maquina = e.target.value;
-                          setNuevoPlan(prev => ({ ...prev, maquina_asignada: maquina }));
-                          
-                          // Actualizar OEE de la línea basado en la máquina seleccionada
-                          const oeeMaquina = oeeMaquinas[maquina] || 0.85;
-                          setNuevoPlan(prev => ({ ...prev, oee_linea: oeeMaquina }));
-                          
-                          // Recalcular tiempo estimado con el nuevo OEE
-                          if (prev.cantidad && prev.velocidad_produccion && prev.disponibilidad_linea) {
-                            const tiempo = calcularTiempoEstimado(
-                              parseInt(prev.cantidad),
-                              prev.velocidad_produccion,
-                              oeeMaquina,
-                              prev.disponibilidad_linea
-                            );
-                            setNuevoPlan(prev => ({ ...prev, tiempo_estimado: tiempo }));
-                          }
+                          setNuevoPlan(prev => {
+                            const nuevoPlan = { ...prev, maquina_asignada: maquina };
+                            
+                            // Actualizar OEE de la línea basado en la máquina seleccionada
+                            const oeeMaquina = oeeMaquinas[maquina] || 0.85;
+                            nuevoPlan.oee_linea = oeeMaquina;
+                            
+                            // Recalcular tiempo estimado con el nuevo OEE
+                            if (nuevoPlan.cantidad && nuevoPlan.velocidad_produccion && nuevoPlan.disponibilidad_linea) {
+                              const tiempo = calcularTiempoEstimado(
+                                parseInt(nuevoPlan.cantidad),
+                                nuevoPlan.velocidad_produccion,
+                                oeeMaquina,
+                                nuevoPlan.disponibilidad_linea
+                              );
+                              nuevoPlan.tiempo_estimado = tiempo;
+                            }
+                            
+                            return nuevoPlan;
+                          });
                         }}
                         required
                         disabled={!nuevoPlan.producto}
@@ -2016,18 +2024,22 @@ const PlanProduccion = () => {
                         onChange={(e) => {
                           const valor = parseFloat(e.target.value);
                           if (!isNaN(valor) && valor >= 0.5 && valor <= 1.0) {
-                            setNuevoPlan(prev => ({ ...prev, oee_linea: valor }));
-                            
-                            // Recalcular tiempo estimado
-                            if (prev.cantidad && prev.velocidad_produccion && prev.disponibilidad_linea) {
-                              const tiempo = calcularTiempoEstimado(
-                                parseInt(prev.cantidad),
-                                prev.velocidad_produccion,
-                                valor,
-                                prev.disponibilidad_linea
-                              );
-                              setNuevoPlan(prev => ({ ...prev, tiempo_estimado: tiempo }));
-                            }
+                            setNuevoPlan(prev => {
+                              const nuevoPlan = { ...prev, oee_linea: valor };
+                              
+                              // Recalcular tiempo estimado
+                              if (nuevoPlan.cantidad && nuevoPlan.velocidad_produccion && nuevoPlan.disponibilidad_linea) {
+                                const tiempo = calcularTiempoEstimado(
+                                  parseInt(nuevoPlan.cantidad),
+                                  nuevoPlan.velocidad_produccion,
+                                  valor,
+                                  nuevoPlan.disponibilidad_linea
+                                );
+                                nuevoPlan.tiempo_estimado = tiempo;
+                              }
+                              
+                              return nuevoPlan;
+                            });
                           }
                         }}
                         required
@@ -2055,18 +2067,22 @@ const PlanProduccion = () => {
                         className="form-control py-3 min-h-[44px] transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
                         value={nuevoPlan.disponibilidad_linea || ''}
                         onChange={(e) => {
-                          setNuevoPlan(prev => ({ ...prev, disponibilidad_linea: e.target.value }));
-                          
-                          // Recalcular tiempo estimado
-                          if (prev.cantidad && prev.velocidad_produccion && prev.oee_linea) {
-                            const tiempo = calcularTiempoEstimado(
-                              parseInt(prev.cantidad),
-                              prev.velocidad_produccion,
-                              prev.oee_linea,
-                              e.target.value
-                            );
-                            setNuevoPlan(prev => ({ ...prev, tiempo_estimado: tiempo }));
-                          }
+                          setNuevoPlan(prev => {
+                            const nuevoPlan = { ...prev, disponibilidad_linea: e.target.value };
+                            
+                            // Recalcular tiempo estimado
+                            if (nuevoPlan.cantidad && nuevoPlan.velocidad_produccion && nuevoPlan.oee_linea) {
+                              const tiempo = calcularTiempoEstimado(
+                                parseInt(nuevoPlan.cantidad),
+                                nuevoPlan.velocidad_produccion,
+                                nuevoPlan.oee_linea,
+                                e.target.value
+                              );
+                              nuevoPlan.tiempo_estimado = tiempo;
+                            }
+                            
+                            return nuevoPlan;
+                          });
                         }}
                         aria-describedby="disponibilidad-help"
                       />
