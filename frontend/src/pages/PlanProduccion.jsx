@@ -1192,7 +1192,7 @@ const PlanProduccion = () => {
         {/* Vista de Planificación */}
         {activeTab === 'planificacion' && (
           <div id="tab-panel-planificacion" role="tabpanel" aria-labelledby="tab-planificacion" className="overflow-x-auto -mx-4 px-4">
-            <div className="min-w-[1400px]">
+            <div className="min-w-[1200px]">
               <table className="w-full text-sm" role="table" aria-label="Tabla de planificación de producción">
                 <thead>
                   <tr className="bg-bg-secondary/50">
@@ -1776,8 +1776,8 @@ const PlanProduccion = () => {
 
       {/* ✅ MODAL FUNCIONAL PARA NUEVA ORDEN - TOTALMENTE MEJORADO */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-          <div className="bg-bg-primary rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+          <div className="bg-bg-primary rounded-xl shadow-2xl border border-border-color w-full max-w-4xl max-h-[95vh] overflow-y-auto relative transform transition-all duration-300 scale-100 hover:scale-[1.02]">
             {/* Header del Modal */}
             <div className="flex justify-between items-start mb-6 pb-4 border-b border-border-color">
               <h3 id="modal-title" className="font-bold text-xl flex items-center gap-3 text-accent-purple">
