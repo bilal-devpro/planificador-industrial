@@ -8,9 +8,6 @@ const pool = dbConfig.pool;
 // Exportar la función de prueba de conexión
 const testConnection = dbConfig.testConnection;
 
-// Exportar la función de inicialización
-const initDatabase = dbConfig.initDatabase;
-
 // Inicializar base de datos
 async function initDatabase() {
   try {
