@@ -114,24 +114,74 @@ router.get('/ultimos', async (req, res) => {
 // Limpiar todos los datos de ALUPAK
 router.delete('/limpiar', async (req, res) => {
   try {
+    console.log('🧹 Iniciando limpieza de ALUPAK...');
+    
+    // Verificar conexión
+    if (!pool) {
+      throw new Error('Pool de conexiones no disponible');
+    }
+
+    // Contar registros antes de eliminar
+    const countResult = await pool.query('SELECT COUNT(*) as total FROM alupak_pedidos');
+    const totalRegistros = parseInt(countResult.rows[0].total);
+    
+    console.log(`📦 Registros a eliminar: ${totalRegistros}`);
+
+    // Eliminar datos
     await pool.query('DELETE FROM alupak_pedidos');
     await pool.query('DELETE FROM historial_importaciones WHERE tipo = $1', ['alupak']);
-    res.json({ success: true, message: 'Datos de ALUPAK eliminados correctamente' });
+    
+    console.log('✅ Limpieza completada exitosamente');
+    
+    res.json({ 
+      success: true, 
+      message: `Datos de ALUPAK eliminados correctamente (${totalRegistros} registros)` 
+    });
+    
   } catch (error) {
     console.error('❌ Error limpiando ALUPAK:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      details: 'Error al intentar eliminar datos de ALUPAK'
+    });
   }
 });
 
-// Endpoint para frontend - Limpiar ALUPAK
+// Endpoint para frontend - Limpiar ALUPAK (ruta completa)
 router.delete('/api/alupak/limpiar', async (req, res) => {
   try {
+    console.log('🧹 Iniciando limpieza de ALUPAK desde frontend...');
+    
+    // Verificar conexión
+    if (!pool) {
+      throw new Error('Pool de conexiones no disponible');
+    }
+
+    // Contar registros antes de eliminar
+    const countResult = await pool.query('SELECT COUNT(*) as total FROM alupak_pedidos');
+    const totalRegistros = parseInt(countResult.rows[0].total);
+    
+    console.log(`📦 Registros a eliminar: ${totalRegistros}`);
+
+    // Eliminar datos
     await pool.query('DELETE FROM alupak_pedidos');
     await pool.query('DELETE FROM historial_importaciones WHERE tipo = $1', ['alupak']);
-    res.json({ success: true, message: 'Datos de ALUPAK eliminados correctamente' });
+    
+    console.log('✅ Limpieza completada exitosamente');
+    
+    res.json({ 
+      success: true, 
+      message: `Datos de ALUPAK eliminados correctamente (${totalRegistros} registros)` 
+    });
+    
   } catch (error) {
-    console.error('❌ Error limpiando ALUPAK:', error);
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ Error limpiando ALUPAK desde frontend:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      details: 'Error al intentar eliminar datos de ALUPAK'
+    });
   }
 });
 
