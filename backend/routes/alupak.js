@@ -123,4 +123,16 @@ router.delete('/limpiar', async (req, res) => {
   }
 });
 
+// Endpoint para frontend - Limpiar ALUPAK
+router.delete('/api/alupak/limpiar', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM alupak_pedidos');
+    await pool.query('DELETE FROM historial_importaciones WHERE tipo = $1', ['alupak']);
+    res.json({ success: true, message: 'Datos de ALUPAK eliminados correctamente' });
+  } catch (error) {
+    console.error('❌ Error limpiando ALUPAK:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;
