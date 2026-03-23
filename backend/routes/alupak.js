@@ -127,8 +127,14 @@ router.delete('/limpiar', async (req, res) => {
     
     console.log(`📦 Registros a eliminar: ${totalRegistros}`);
 
-    // Eliminar datos
+    // Eliminar datos en orden correcto para evitar conflictos de claves foráneas
+    // 1. Eliminar planes de producción que referencian a ALUPAK
+    await pool.query('DELETE FROM planes_produccion WHERE alupak_pedido_id IS NOT NULL');
+    
+    // 2. Eliminar pedidos ALUPAK
     await pool.query('DELETE FROM alupak_pedidos');
+    
+    // 3. Eliminar historial de importaciones
     await pool.query('DELETE FROM historial_importaciones WHERE tipo = $1', ['alupak']);
     
     console.log('✅ Limpieza completada exitosamente');
@@ -164,8 +170,14 @@ router.delete('/api/alupak/limpiar', async (req, res) => {
     
     console.log(`📦 Registros a eliminar: ${totalRegistros}`);
 
-    // Eliminar datos
+    // Eliminar datos en orden correcto para evitar conflictos de claves foráneas
+    // 1. Eliminar planes de producción que referencian a ALUPAK
+    await pool.query('DELETE FROM planes_produccion WHERE alupak_pedido_id IS NOT NULL');
+    
+    // 2. Eliminar pedidos ALUPAK
     await pool.query('DELETE FROM alupak_pedidos');
+    
+    // 3. Eliminar historial de importaciones
     await pool.query('DELETE FROM historial_importaciones WHERE tipo = $1', ['alupak']);
     
     console.log('✅ Limpieza completada exitosamente');
