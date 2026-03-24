@@ -22,12 +22,12 @@ router.post('/importar', upload.single('archivo'), async (req, res) => {
         // 🔥 Normalización obligatoria
         const pedidos = rows.map(r => ({
             // Campos para mostrar en frontend
-            customer_name: r.CompanyName || '',
+            customer_name: r.CustomerName || '',
             no_sales_line: r.No_SalesLine || '',
             qty_pending: r.Quantity_SalesLine || 0,
 
             // Campos que la BD necesita
-            CustomerName: r.CompanyName || '',
+            CustomerName: r.CustomerName || '',
             No_SalesLine: r.No_SalesLine || '',
             Qty_pending: r.Quantity_SalesLine || 0,
 
