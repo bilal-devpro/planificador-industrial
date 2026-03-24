@@ -24,12 +24,12 @@ router.post('/importar', upload.single('archivo'), async (req, res) => {
             // Campos para mostrar en frontend
             customer_name: r.CustomerName || '',
             no_sales_line: r.No_SalesLine || '',
-            qty_pending: r.Quantity_SalesLine || 0,
+            qty_pending: r.Qty_pending || 0,
 
             // Campos que la BD necesita
             CustomerName: r.CustomerName || '',
             No_SalesLine: r.No_SalesLine || '',
-            Qty_pending: r.Quantity_SalesLine || 0,
+            Qty_pending: r.Qty_pending || 0,
 
             archivo_original: nombreArchivo
         }));
