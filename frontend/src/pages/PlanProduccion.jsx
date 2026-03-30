@@ -823,12 +823,10 @@ const PlanProduccion = () => {
       // Extraer el ID numérico del rowId (eliminar el prefijo "plan-")
       const planId = rowId.replace('plan-', '');
       
-      const response = await fetch(`${API}/api/produccion/plan`, {
-        method: 'POST',
+      const response = await fetch(`${API}/api/plan/${planId}/editar`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: planId, // ID opcional para actualización
-          alupak_pedido_id: updatedRow.alupak_pedido_id,
           cantidad_planificada: updatedRow.cantidad_planificada,
           maquina_asignada: updatedRow.maquina_asignada,
           fecha_inicio: updatedRow.fecha_inicio,
@@ -2369,27 +2367,36 @@ const PlanProduccion = () => {
                       fecha_inicio: nuevoPlan.fecha_inicio
                     });
 
-                    // Guardar en base de datos
+                    // Guardar en base de datos - NUEVO ENDPOINT ESPECÍFICO
                     try {
-                      const response = await fetch(`${API}/api/plan/produccion`, {
+                      const response = await fetch(`${API}/api/plan/crear-manual`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                          version_id: null,
-                          pedido_id: pedidoSeleccionado.id,
-                          producto_id: null,
-                          linea_id: lineas.find(l => l.codigo === nuevoPlan.linea_asignada)?.id || null,
-                          cantidad: parseInt(nuevoPlan.cantidad_planificada),
+                          alupak_pedido_id: parseInt(nuevoPlan.alupak_pedido_id),
+                          cantidad_planificada: parseInt(nuevoPlan.cantidad),
+                          maquina_asignada: nuevoPlan.maquina_asignada,
                           fecha_inicio: nuevoPlan.fecha_inicio,
-                          fecha_fin: fechaFinCalculada || nuevoPlan.fecha_fin,
-                          turno: '24h',
-                          estado: 'planificado',
-                          oee: oeeMaquina,
-                          observaciones: nuevoPlan.observaciones
+                          observaciones: nuevoPlan.observaciones,
+                          prioridad: nuevoPlan.prioridad,
+                          tipo_orden: nuevoPlan.tipo_orden
                         })
                       });
 
                       if (response.ok) {
+                        const result = await response.json();
+                        
+                        // Actualizar el registro con el ID real de la base de datos
+                        const planConId = {
+                          ...nuevoRegistro,
+                          id: `plan-${result.plan.id}`
+                        };
+                        
+                        const planActualizado = planManual.map(p => 
+                          p.id === nuevoRegistro.id ? planConId : p
+                        );
+                        setPlanManual(planActualizado);
+
                         // Notificar a otros componentes
                         window.dispatchEvent(new Event('planUpdated'));
 
@@ -2410,11 +2417,12 @@ const PlanProduccion = () => {
                         // Feedback de éxito
                         alert('✅ Orden de producción creada exitosamente y guardada en la base de datos');
                       } else {
-                        throw new Error('Error al guardar en base de datos');
+                        const errorData = await response.json();
+                        throw new Error(errorData.mensaje || 'Error al guardar en base de datos');
                       }
                     } catch (error) {
                       console.error('Error guardando en base de datos:', error);
-                      alert('⚠️ La orden se creó en el planificador pero hubo un error al guardar en la base de datos. Los cambios se mantendrán en esta sesión.');
+                      alert(`⚠️ La orden se creó en el planificador pero hubo un error al guardar en la base de datos: ${error.message}`);
                     }
                   }}
                   className="btn btn-primary flex-1 justify-center relative py-3 min-h-[44px] transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-300 focus:outline-none"
