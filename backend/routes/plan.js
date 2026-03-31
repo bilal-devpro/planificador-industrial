@@ -272,9 +272,9 @@ router.post('/guardar', async (req, res) => {
             alupak_pedido_id, cantidad_planificada, maquina_asignada,
             fecha_inicio, fecha_fin, estado, oee_aplicado, observaciones,
             tiempo_estimado_min, generacion, prioridad,
-            es_manual, estado_finalizado, created_at, updated_at
+            es_manual, created_at, updated_at
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
           )
           RETURNING id
         `, [
@@ -290,7 +290,6 @@ router.post('/guardar', async (req, res) => {
           plan.generacion || 'G1',
           plan.prioridad || '3',
           true, // es_manual = true for user-created plans
-          false, // estado_finalizado = false initially
         ]);
 
         if (insertResult.rows[0]) {
