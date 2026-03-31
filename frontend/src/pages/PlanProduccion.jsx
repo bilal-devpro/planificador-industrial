@@ -305,6 +305,14 @@ const PlanProduccion = () => {
           // ✅ CORRECCIÓN: Guardar TODOS los planes, no solo los que necesitan producción
           const planesAGuardar = planCalculado.filter(p => p.alupak_pedido_id);
           
+          console.log('📊 Total planes calculados:', planCalculado.length);
+          console.log('📊 Planes a guardar:', planesAGuardar.length);
+          console.log('📊 Primeros 3 planes:', planesAGuardar.slice(0, 3).map(p => ({
+            id: p.id,
+            alupak_pedido_id: p.alupak_pedido_id,
+            cantidad_a_producir: p.cantidad_a_producir
+          })));
+          
           if (planesAGuardar.length > 0) {
             const response = await fetch(`${API}/api/plan/guardar`, {
               method: 'POST',
