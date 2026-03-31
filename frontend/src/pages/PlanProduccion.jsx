@@ -299,7 +299,62 @@ const PlanProduccion = () => {
       if (pedidosData.pedidos && pedidosData.pedidos.length > 0 && stockData.stock && stockData.stock.length > 0) {
         const stockConsolidado = procesarStockConsolidado(stockData.stock);
         const planCalculado = crearPlanConCalculos(pedidosData.pedidos, stockConsolidado, nuevoOee);
-        setPlanManual(planCalculado);
+        
+        // ✅ GUARDAR AUTOMÁTICAMENTE EN BD PARA QUE SE PUEDAN EDITAR
+        try {
+          // Filtrar solo los planes que necesitan producción
+          const planesAGuardar = planCalculado.filter(p => p.cantidad_a_producir > 0);
+          
+          if (planesAGuardar.length > 0) {
+            const response = await fetch(`${API}/api/plan/guardar`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                planes: planesAGuardar.map(p => ({
+                  alupak_pedido_id: p.alupak_pedido_id,
+                  cantidad_planificada: p.cantidad_a_producir,
+                  maquina_asignada: p.maquina_asignada,
+                  fecha_inicio: p.fecha_inicio,
+                  fecha_fin: p.fecha_fin,
+                  estado: p.estado,
+                  observaciones: p.observaciones,
+                  oee_aplicado: p.oee_aplicado,
+                  generacion: p.generacion,
+                  prioridad: p.prioridad,
+                  tiempo_estimado_minutos: p.tiempo_estimado_min
+                })),
+                usuario_creador: 'sistema'
+              })
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              console.log(`✅ Planes guardados automáticamente en BD: ${result.ids_guardados.length} planes`);
+              
+              // Actualizar IDs locales con los IDs reales de la BD
+              const planConIdsReales = planCalculado.map(p => {
+                const guardado = result.ids_guardados.find((id, index) => 
+                  index < result.ids_guardados.length
+                );
+                return guardado ? { ...p, id: `plan-${guardado}` } : p;
+              });
+              
+              setPlanManual(planConIdsReales);
+              guardarEnHistorial(planConIdsReales, 'carga_inicial', {
+                mensaje: 'Planes calculados y guardados automáticamente',
+                total: result.ids_guardados.length
+              });
+            } else {
+              console.warn('⚠️ No se pudieron guardar los planes en BD, se mantienen localmente');
+              setPlanManual(planCalculado);
+            }
+          } else {
+            setPlanManual(planCalculado);
+          }
+        } catch (error) {
+          console.error('Error guardando planes automáticamente:', error);
+          setPlanManual(planCalculado);
+        }
       } else {
         setPlanManual([]); // Si no hay datos, dejar vacío
       }
