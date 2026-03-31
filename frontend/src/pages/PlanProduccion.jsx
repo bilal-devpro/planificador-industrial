@@ -302,8 +302,8 @@ const PlanProduccion = () => {
         
         // ✅ GUARDAR AUTOMÁTICAMENTE EN BD PARA QUE SE PUEDAN EDITAR
         try {
-          // Filtrar solo los planes que necesitan producción
-          const planesAGuardar = planCalculado.filter(p => p.cantidad_a_producir > 0);
+          // ✅ CORRECCIÓN: Guardar TODOS los planes, no solo los que necesitan producción
+          const planesAGuardar = planCalculado.filter(p => p.alupak_pedido_id);
           
           if (planesAGuardar.length > 0) {
             const response = await fetch(`${API}/api/plan/guardar`, {
