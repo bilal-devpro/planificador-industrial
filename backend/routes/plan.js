@@ -271,10 +271,10 @@ router.post('/guardar', async (req, res) => {
           INSERT INTO planes_produccion (
             alupak_pedido_id, cantidad_planificada, maquina_asignada,
             fecha_inicio, fecha_fin, estado, oee_aplicado, observaciones,
-            tiempo_estimado_min, usuario_creador, generacion, prioridad,
+            tiempo_estimado_min, generacion, prioridad,
             es_manual, estado_finalizado, created_at, updated_at
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
           )
           RETURNING id
         `, [
@@ -287,7 +287,6 @@ router.post('/guardar', async (req, res) => {
           plan.oee_aplicado || 0.85,
           plan.observaciones || '',
           plan.tiempo_estimado_minutos || 0,
-          usuario_creador,
           plan.generacion || 'G1',
           plan.prioridad || '3',
           true, // es_manual = true for user-created plans
