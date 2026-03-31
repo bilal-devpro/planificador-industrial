@@ -1,7 +1,7 @@
 const { pool } = require('../database');
 
 // Validar datos básicos de un plan
-function validarPlan(data) {
+function validarPlan(data, options = {}) {
   const errores = [];
   
   if (!data.alupak_pedido_id) errores.push('alupak_pedido_id es requerido');
@@ -9,7 +9,18 @@ function validarPlan(data) {
   if (!data.maquina_asignada) errores.push('maquina_asignada es requerida');
   if (!data.fecha_inicio) errores.push('fecha_inicio es requerida');
   
-  return errores;
+  // Validación de fechas si se solicita
+  if (options.checkDates && data.fecha_inicio) {
+    const fecha = new Date(data.fecha_inicio);
+    if (isNaN(fecha.getTime())) {
+      errores.push('fecha_inicio tiene formato inválido');
+    }
+  }
+  
+  return {
+    isValid: errores.length === 0,
+    errors: errores
+  };
 }
 
 // Validar si un plan puede editarse
