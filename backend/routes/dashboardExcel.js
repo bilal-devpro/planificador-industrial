@@ -5,15 +5,35 @@ const { pool } = require('../database');
 // GET /api/dashboard-excel/pedidos
 router.get('/pedidos', async (req, res) => {
   try {
-    const r = await pool.query(`
-      SELECT *
-      FROM alupak_pedidos
-      ORDER BY fecha_carga DESC
+    // Primero verificar la estructura de la tabla
+    const tableInfo = await pool.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'alupak_pedidos'
+      ORDER BY ordinal_position
     `);
+    console.log('📋 Columnas en alupak_pedidos:', tableInfo.rows.map(c => c.column_name).join(', '));
+
+    // Obtener pedidos con campos explícitos
+    const r = await pool.query(`
+      SELECT 
+        id,
+        no_sales_line,
+        customer_name,
+        qty_pending,
+        producto_nombre,
+        fecha_importacion,
+        fecha_carga
+      FROM alupak_pedidos
+      WHERE qty_pending > 0
+      ORDER BY fecha_carga DESC, id DESC
+    `);
+    
+    console.log(`✅ Pedidos encontrados: ${r.rows.length}`);
     res.json({ pedidos: r.rows });
   } catch (err) {
-    console.error('Error /dashboard-excel/pedidos:', err);
-    res.status(500).json({ error: err.message });
+    console.error('❌ Error /dashboard-excel/pedidos:', err);
+    res.status(500).json({ error: err.message, pedidos: [] });
   }
 });
 
