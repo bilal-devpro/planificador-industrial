@@ -289,14 +289,14 @@ const PlanProduccion = () => {
             ) : (
               planes.map((plan) => (
                 <tr key={plan.alupak_pedido_id} className="hover:bg-bg-secondary/50">
-                  <td className="py-3 px-4 font-mono font-bold">{plan.no_sales_line}</td>
-                  <td className="py-3 px-4 hidden md:table-cell">{plan.customer_name}</td>
+                  <td className="py-3 px-4 font-mono font-bold text-sm">{plan.no_sales_line || plan.producto || '-'}</td>
+                  <td className="py-3 px-4 hidden md:table-cell">{plan.customer_name || plan.cliente || '-'}</td>
                   <td className="py-3 px-4 text-right font-bold">
-                    {plan.cantidad_pendiente?.toLocaleString()}
+                    {plan.cantidad_pendiente?.toLocaleString() || plan.pendiente?.toLocaleString() || '0'}
                   </td>
                   <td className="py-3 px-4 text-right hidden sm:table-cell">
                     <span className={plan.stock_disponible >= plan.cantidad_pendiente ? 'text-green-400' : 'text-yellow-400'}>
-                      {plan.stock_disponible?.toLocaleString()}
+                      {plan.stock_disponible?.toLocaleString() || plan.stock?.toLocaleString() || '0'}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right">
@@ -310,7 +310,7 @@ const PlanProduccion = () => {
                       />
                     ) : (
                       <span className={`font-bold ${plan.cantidad_planificada > 0 ? 'text-accent-yellow' : 'text-green-400'}`}>
-                        {plan.cantidad_planificada?.toLocaleString()}
+                        {plan.cantidad_planificada?.toLocaleString() || '0'}
                       </span>
                     )}
                   </td>
