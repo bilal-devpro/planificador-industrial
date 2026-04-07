@@ -25,13 +25,34 @@ router.post('/importar', upload.single('archivo'), async (req, res) => {
             const keys = Object.keys(r);
             
             // Cliente: CustomerName, customer_name, CLIENTE, Cliente, etc.
-            const customerKey = keys.find(k => k.toLowerCase().includes('customer') || k.toLowerCase().includes('cliente'));
+            const customerKey = keys.find(k => 
+                k.toLowerCase() === 'cliente' || 
+                k.toLowerCase() === 'customer' ||
+                k.toLowerCase().includes('customer') || 
+                k.toLowerCase().includes('cliente')
+            );
             
-            // Producto: No_SalesLine, no_sales_line, PRODUCTO, Producto, etc.
-            const productKey = keys.find(k => k.toLowerCase().includes('sales') || k.toLowerCase().includes('producto') || k.toLowerCase().includes('no_'));
+            // Producto: No_SalesLine, no_sales_line, PRODUCTO, Producto, CODIGO, etc.
+            const productKey = keys.find(k => 
+                k.toLowerCase() === 'producto' || 
+                k.toLowerCase() === 'codigo' ||
+                k.toLowerCase() === 'referencia' ||
+                k.toLowerCase().includes('sales') || 
+                k.toLowerCase().includes('producto') || 
+                k.toLowerCase().includes('no_') ||
+                k.toLowerCase().includes('pv')
+            );
             
             // Cantidad: Qty_pending, qty_pending, CANTIDAD, Cantidad, PENDIENTE, etc.
-            const qtyKey = keys.find(k => k.toLowerCase().includes('qty') || k.toLowerCase().includes('cantidad') || k.toLowerCase().includes('pending') || k.toLowerCase().includes('pendiente'));
+            const qtyKey = keys.find(k => 
+                k.toLowerCase() === 'cantidad' || 
+                k.toLowerCase() === 'pendiente' ||
+                k.toLowerCase() === 'qty' ||
+                k.toLowerCase().includes('qty') || 
+                k.toLowerCase().includes('cantidad') || 
+                k.toLowerCase().includes('pending') || 
+                k.toLowerCase().includes('pendiente')
+            );
 
             const customerName = customerKey ? (r[customerKey] || '') : '';
             const noSalesLine = productKey ? (r[productKey] || '') : '';
