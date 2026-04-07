@@ -7,10 +7,22 @@ const { initDatabase } = require('./database');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Inicializar BD SOLO UNA VEZ
-initDatabase()
-  .then(() => console.log("Base de datos lista"))
-  .catch(err => console.error("Error inicializando DB:", err));
+// Inicializar BD y ejecutar migraciones
+async function iniciarSistema() {
+  try {
+    await initDatabase();
+    console.log("✅ Base de datos lista");
+    
+    // Ejecutar migración de planes_produccion
+    const { migratePlanesProduccion } = require('./scripts/migrate-planes');
+    await migratePlanesProduccion();
+    console.log("✅ Migración de planes completada");
+  } catch (err) {
+    console.error("❌ Error inicializando sistema:", err);
+  }
+}
+
+iniciarSistema();
 
 // CORS
 app.use(cors({
@@ -34,8 +46,7 @@ app.use('/api/productos', require('./routes/productos'));
 app.use('/api/alupak', require('./routes/alupak'));
 app.use('/api/inventario', require('./routes/inventario'));
 app.use('/api/of', require('./routes/of'));
-app.use('/api/plan', require('./routes/plan'));
-app.use('/api/produccion', require('./routes/produccion'));
+app.use('/api/planes', require('./routes/planes'));
 app.use('/api/lineas', require('./routes/lineas'));
 
 app.get('/api/health', (req, res) => {
