@@ -19,20 +19,38 @@ router.post('/importar', upload.single('archivo'), async (req, res) => {
 
         const nombreArchivo = req.file.originalname || 'alupak.xlsx';
 
-        // 🔥 Normalización obligatoria
-        const pedidos = rows.map(r => ({
-            // Campos para mostrar en frontend
-            customer_name: r.CustomerName || '',
-            no_sales_line: r.No_SalesLine || '',
-            qty_pending: r.Qty_pending || 0,
+        // 🔥 Normalización obligatoria - ACEPTA MÚLTIPLES VARIANTES DE NOMBRES
+        const pedidos = rows.map(r => {
+            // Buscar columnas con nombres similares (case-insensitive)
+            const keys = Object.keys(r);
+            
+            // Cliente: CustomerName, customer_name, CLIENTE, Cliente, etc.
+            const customerKey = keys.find(k => k.toLowerCase().includes('customer') || k.toLowerCase().includes('cliente'));
+            
+            // Producto: No_SalesLine, no_sales_line, PRODUCTO, Producto, etc.
+            const productKey = keys.find(k => k.toLowerCase().includes('sales') || k.toLowerCase().includes('producto') || k.toLowerCase().includes('no_'));
+            
+            // Cantidad: Qty_pending, qty_pending, CANTIDAD, Cantidad, PENDIENTE, etc.
+            const qtyKey = keys.find(k => k.toLowerCase().includes('qty') || k.toLowerCase().includes('cantidad') || k.toLowerCase().includes('pending') || k.toLowerCase().includes('pendiente'));
 
-            // Campos que la BD necesita
-            CustomerName: r.CustomerName || '',
-            No_SalesLine: r.No_SalesLine || '',
-            Qty_pending: r.Qty_pending || 0,
+            const customerName = customerKey ? (r[customerKey] || '') : '';
+            const noSalesLine = productKey ? (r[productKey] || '') : '';
+            const qtyPending = qtyKey ? (r[qtyKey] || 0) : 0;
 
-            archivo_original: nombreArchivo
-        }));
+            return {
+                // Campos para mostrar en frontend
+                customer_name: customerName,
+                no_sales_line: noSalesLine,
+                qty_pending: Number(qtyPending) || 0,
+
+                // Campos que la BD necesita
+                CustomerName: customerName,
+                No_SalesLine: noSalesLine,
+                Qty_pending: Number(qtyPending) || 0,
+
+                archivo_original: nombreArchivo
+            };
+        });
 
         res.json({
             success: true,
